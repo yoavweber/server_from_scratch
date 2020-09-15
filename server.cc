@@ -14,6 +14,9 @@ using namespace std;
 #define PORT 8069
 string checkHttpType(string position, int socket);
 
+// make the content length in the html header dynamic
+// make sure it would knows how to detect url with paths
+
 int main(int argc, char const *argv[])
 {
 
@@ -21,8 +24,6 @@ int main(int argc, char const *argv[])
     long valread;
     struct sockaddr_in address;
     int addrlen = sizeof(address);
-
-    char *hello = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 12\n\nHello world!";
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -62,10 +63,7 @@ int main(int argc, char const *argv[])
         string res = buffer;
         checkHttpType(res, new_socket);
         cout << res << endl;
-        // printf("%s\n",test );
-        // printf("%s\n",buffer );
 
-        // write(new_socket, hello, strlen(hello));
         printf("------------------Hello message sent-------------------\n");
         close(new_socket);
     }
@@ -75,9 +73,9 @@ int main(int argc, char const *argv[])
 }
 
 string checkHttpType(string position, int socket)
+// return the string and handle sending the information outside of the socket
 {
     auto httpMethodPosition = position.find(" ");
-    string hello = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: 1000\n\n";
 
     string httpMethod = position.substr(0, httpMethodPosition);
     if (httpMethod == "GET")
@@ -91,35 +89,21 @@ string checkHttpType(string position, int socket)
 
         if (inFile.is_open())
         {
-
             string content((istreambuf_iterator<char>(inFile)),
                            (istreambuf_iterator<char>()));
+            int contentLengthInt = content.size();
+            string contentLength = to_string(contentLengthInt);
+            string hello = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + contentLength + "\n\n";
+
             hello.append(content);
 
             char *cstr = new char[hello.length() + 1];
             strcpy(cstr, hello.c_str());
 
             send(socket, cstr, size + 1000, 1);
-
-            // while (getline(inFile, line))
-            // {
-            //     cout << line << '\n';
-            // }
             inFile.close();
         }
-        // if (!inFile)
-        // {
-        //     cerr << "Unable to open file datafile.txt";
-        //     exit(1); // call system to stop
-        // }
 
         printf("%d\n", size);
-        // write(socket, &hello, size);
-
-        // for (int i = 0; i < size; i++)
-        // {
-        //     write(socket, &hello, 1);
-        // }
-        // send(socket, hello, strlen(hello), 1);
     }
 }
