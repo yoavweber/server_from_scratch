@@ -8,14 +8,20 @@
 #include <iostream>
 #include <fstream>
 #include <filesystem>
+#include <regex>
+#include <iomanip>
 
 using namespace std;
 
-#define PORT 8069
+#define PORT 8085
 string checkHttpType(string position, int socket);
+string getFilePath(string req);
 
-// make the content length in the html header dynamic
 // make sure it would knows how to detect url with paths
+
+//finish the regex https://rextester.com/JPSDEQ88022
+// https://www.regextester.com/97722
+//https://www.rexegg.com/regex-quickstart.html
 
 int main(int argc, char const *argv[])
 {
@@ -60,9 +66,10 @@ int main(int argc, char const *argv[])
 
         char buffer[30000] = {0};
         valread = read(new_socket, buffer, 30000);
-        string res = buffer;
-        checkHttpType(res, new_socket);
-        cout << res << endl;
+        string req = buffer;
+        getFilePath(req);
+        checkHttpType(req, new_socket);
+        // cout << req << endl;
 
         printf("------------------Hello message sent-------------------\n");
         close(new_socket);
@@ -103,7 +110,20 @@ string checkHttpType(string position, int socket)
             send(socket, cstr, size + 1000, 1);
             inFile.close();
         }
-
-        printf("%d\n", size);
     }
+    return "h";
+}
+
+string getFilePath(string req)
+{
+    cout << req;
+    const regex re("(http:\/\/|https:\/\/)(.*)");
+    // const regex re("?<=Referer: )(.*)");
+
+    smatch match;
+    bool test = regex_search(req, match, re);
+    string fullUrl = match[0];
+    string filePath = fullUrl.substr(fullUrl.find("/", 7) + 1);
+    cout << filePath << endl;
+    return filePath;
 }
