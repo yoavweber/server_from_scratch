@@ -13,14 +13,12 @@
 
 using namespace std;
 
-#define PORT 8086
+#define PORT 8080
 string checkHttpType(string position, int socket);
-// string getFilePath(string req);
+void httpRes(ifstream &file, string res, int socket);
 
-// make sure it would knows how to detect url with paths
-// check if you are getting the url path near the GET
-// finish orginizing the code
-
+// create a place with dedicted http respons
+// start to look into testing
 //finish the regex https://rextester.com/JPSDEQ88022
 // https://www.regextester.com/97722
 //https://www.rexegg.com/regex-quickstart.html
@@ -87,7 +85,6 @@ string checkHttpType(string position, int socket)
     auto httpMethodPosition = position.find(" ");
     auto tests = position.find(" ", httpMethodPosition + 1);
     string filePath = position.substr(httpMethodPosition + 2, tests - 5); // not sure why this is finding two more char after the space
-    cout << filePath << " file path" << endl;
     string httpMethod = position.substr(0, httpMethodPosition);
     if (httpMethod == "GET")
     {
@@ -110,51 +107,33 @@ string checkHttpType(string position, int socket)
         // move this to a different function
         if (inFile.is_open())
         {
-
-            string content((istreambuf_iterator<char>(inFile)),
-                           (istreambuf_iterator<char>()));
-            int contentLengthInt = content.size();
-            string contentLength = to_string(contentLengthInt);
-            string successResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + contentLength + "\n\n";
-
-            successResponse.append(content);
-
-            char *cstr = new char[successResponse.length() + 1];
-            strcpy(cstr, successResponse.c_str());
-
-            send(socket, cstr, size + 1000, 1);
-            inFile.close();
+            string successResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
+            httpRes(inFile, successResponse, socket);
         }
         else
         {
             inFile.open("404.html");
-            string content((istreambuf_iterator<char>(inFile)),
-                           (istreambuf_iterator<char>()));
-            int contentLengthInt = content.size();
-            string contentLength = to_string(contentLengthInt);
-            string Response404 = "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: " + contentLength + "\n\n";
-            Response404.append(content);
+            string Response404 = "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: ";
 
-            char *cstr = new char[Response404.length() + 1];
-            strcpy(cstr, Response404.c_str());
-
-            send(socket, cstr, size + 1000, 1);
-            inFile.close();
+            httpRes(inFile, Response404, socket);
         }
     }
     return "h";
 }
 
-// string getFilePath(string req)
-// {
-//     cout << req;
-//     const regex re("(^.)(.*\b )");
+void httpRes(ifstream &file, string res, int socket)
+{
+    int size = file.tellg();
+    string content((istreambuf_iterator<char>(file)),
+                   (istreambuf_iterator<char>()));
+    int contentLengthInt = content.size();
+    string contentLength = to_string(contentLengthInt);
+    string Response404 = res + contentLength + "\n\n";
+    Response404.append(content);
 
-//     smatch match;
-//     regex_search(req, match, re);
-//     string fullUrl = match[0];
-//     // string filePath = fullUrl.substr(fullUrl.find("/", 7) + 1);
-//     string filePath = match[0];
-//     cout << fullUrl << "file path" << endl;
-//     return filePath;
-// }
+    char *cstr = new char[Response404.length() + 1];
+    strcpy(cstr, Response404.c_str());
+
+    send(socket, cstr, size + 1000, 1);
+    file.close();
+}
