@@ -13,11 +13,13 @@
 
 using namespace std;
 
-#define PORT 8085
+#define PORT 8086
 string checkHttpType(string position, int socket);
-string getFilePath(string req);
+// string getFilePath(string req);
 
 // make sure it would knows how to detect url with paths
+// check if you are getting the url path near the GET
+// finish orginizing the code
 
 //finish the regex https://rextester.com/JPSDEQ88022
 // https://www.regextester.com/97722
@@ -67,7 +69,7 @@ int main(int argc, char const *argv[])
         char buffer[30000] = {0};
         valread = read(new_socket, buffer, 30000);
         string req = buffer;
-        getFilePath(req);
+
         checkHttpType(req, new_socket);
         // cout << req << endl;
 
@@ -83,29 +85,58 @@ string checkHttpType(string position, int socket)
 // return the string and handle sending the information outside of the socket
 {
     auto httpMethodPosition = position.find(" ");
-
+    auto tests = position.find(" ", httpMethodPosition + 1);
+    string filePath = position.substr(httpMethodPosition + 2, tests - 5); // not sure why this is finding two more char after the space
+    cout << filePath << " file path" << endl;
     string httpMethod = position.substr(0, httpMethodPosition);
     if (httpMethod == "GET")
     {
         // ofstream inFile;
         ifstream inFile;
-        inFile.open("index.html");
+
+        cout << filePath + ".html" << endl;
+        if (filePath.size() == 0)
+        {
+            inFile.open("index.html");
+        }
+        else
+        {
+            inFile.open(filePath + ".html");
+        }
         inFile.seekg(0, inFile.end);
         int size = inFile.tellg();
         inFile.seekg(0, inFile.beg);
 
+        // move this to a different function
         if (inFile.is_open())
         {
+
             string content((istreambuf_iterator<char>(inFile)),
                            (istreambuf_iterator<char>()));
             int contentLengthInt = content.size();
             string contentLength = to_string(contentLengthInt);
-            string hello = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + contentLength + "\n\n";
+            string successResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: " + contentLength + "\n\n";
 
-            hello.append(content);
+            successResponse.append(content);
 
-            char *cstr = new char[hello.length() + 1];
-            strcpy(cstr, hello.c_str());
+            char *cstr = new char[successResponse.length() + 1];
+            strcpy(cstr, successResponse.c_str());
+
+            send(socket, cstr, size + 1000, 1);
+            inFile.close();
+        }
+        else
+        {
+            inFile.open("404.html");
+            string content((istreambuf_iterator<char>(inFile)),
+                           (istreambuf_iterator<char>()));
+            int contentLengthInt = content.size();
+            string contentLength = to_string(contentLengthInt);
+            string Response404 = "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: " + contentLength + "\n\n";
+            Response404.append(content);
+
+            char *cstr = new char[Response404.length() + 1];
+            strcpy(cstr, Response404.c_str());
 
             send(socket, cstr, size + 1000, 1);
             inFile.close();
@@ -114,16 +145,16 @@ string checkHttpType(string position, int socket)
     return "h";
 }
 
-string getFilePath(string req)
-{
-    cout << req;
-    const regex re("(http:\/\/|https:\/\/)(.*)");
-    // const regex re("?<=Referer: )(.*)");
+// string getFilePath(string req)
+// {
+//     cout << req;
+//     const regex re("(^.)(.*\b )");
 
-    smatch match;
-    bool test = regex_search(req, match, re);
-    string fullUrl = match[0];
-    string filePath = fullUrl.substr(fullUrl.find("/", 7) + 1);
-    cout << filePath << endl;
-    return filePath;
-}
+//     smatch match;
+//     regex_search(req, match, re);
+//     string fullUrl = match[0];
+//     // string filePath = fullUrl.substr(fullUrl.find("/", 7) + 1);
+//     string filePath = match[0];
+//     cout << fullUrl << "file path" << endl;
+//     return filePath;
+// }
