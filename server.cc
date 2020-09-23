@@ -14,12 +14,12 @@
 using namespace std;
 
 #define PORT 8080
-string checkHttpType(string position, int socket);
+void checkHttpType(string position, int socket);
 void httpRes(ifstream &file, string res, int socket);
 
 // create a place with dedicted http respons
 // start to look into testing
-//finish the regex https://rextester.com/JPSDEQ88022
+// https://rextester.com/JPSDEQ88022
 // https://www.regextester.com/97722
 //https://www.rexegg.com/regex-quickstart.html
 
@@ -38,10 +38,14 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
 
+    // choose protocol
     address.sin_family = AF_INET;
+    //choose interface to bind to(currently binding to all interfaces)
     address.sin_addr.s_addr = INADDR_ANY;
+    //choose port
     address.sin_port = htons(PORT);
 
+    //no sure whats going in here
     memset(address.sin_zero, '\0', sizeof address.sin_zero);
 
     //listening to the created socket
@@ -65,11 +69,11 @@ int main(int argc, char const *argv[])
         }
 
         char buffer[30000] = {0};
+        // not sure what is it used
         valread = read(new_socket, buffer, 30000);
         string req = buffer;
 
         checkHttpType(req, new_socket);
-        // cout << req << endl;
 
         printf("------------------Hello message sent-------------------\n");
         close(new_socket);
@@ -79,7 +83,7 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-string checkHttpType(string position, int socket)
+void checkHttpType(string position, int socket)
 // return the string and handle sending the information outside of the socket
 {
     auto httpMethodPosition = position.find(" ");
@@ -88,7 +92,6 @@ string checkHttpType(string position, int socket)
     string httpMethod = position.substr(0, httpMethodPosition);
     if (httpMethod == "GET")
     {
-        // ofstream inFile;
         ifstream inFile;
 
         cout << filePath + ".html" << endl;
@@ -104,7 +107,6 @@ string checkHttpType(string position, int socket)
         int size = inFile.tellg();
         inFile.seekg(0, inFile.beg);
 
-        // move this to a different function
         if (inFile.is_open())
         {
             string successResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
@@ -118,7 +120,6 @@ string checkHttpType(string position, int socket)
             httpRes(inFile, Response404, socket);
         }
     }
-    return "h";
 }
 
 void httpRes(ifstream &file, string res, int socket)
