@@ -10,24 +10,29 @@
 #include <filesystem>
 #include <regex>
 #include <iomanip>
+#include <thread>
+#include <vector>
 
 using namespace std;
 
 #define PORT 8080
+#define THREAD_POOL_SIZE 20
+
 void checkHttpType(string position, int socket);
 void httpRes(ifstream &file, string res, int socket);
+void handleConnection(int socket);
 
+int Num_Threads = thread::hardware_concurrency();
+
+// notes:
 // create a place with dedicted http respons
 // start to look into testing
-// https://rextester.com/JPSDEQ88022
-// https://www.regextester.com/97722
-//https://www.rexegg.com/regex-quickstart.html
 
 int main(int argc, char const *argv[])
 {
 
     int server_fd, new_socket;
-    long valread;
+
     struct sockaddr_in address;
     int addrlen = sizeof(address);
 
@@ -54,7 +59,8 @@ int main(int argc, char const *argv[])
         perror("In bind");
         exit(EXIT_FAILURE);
     }
-    if (listen(server_fd, 10) < 0)
+    // prepring the accept connection from socket, would que 10 before further requts would be refuesd
+    if (listen(server_fd, 100) < 0)
     {
         perror("In listen");
         exit(EXIT_FAILURE);
@@ -68,15 +74,8 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
 
-        char buffer[30000] = {0};
-        // not sure what is it used
-        valread = read(new_socket, buffer, 30000);
-        string req = buffer;
-
-        checkHttpType(req, new_socket);
-
-        printf("------------------Hello message sent-------------------\n");
-        close(new_socket);
+        // should be multithreaded
+        handleConnection(new_socket);
     }
     printf("------------------Closing connection-------------------\n");
 
@@ -137,4 +136,18 @@ void httpRes(ifstream &file, string res, int socket)
 
     send(socket, cstr, size + 1000, 1);
     file.close();
+}
+
+void handleConnection(int socket)
+{
+    long valread;
+    char buffer[30000] = {0};
+    // not sure what is it used
+    valread = read(socket, buffer, 30000);
+    string req = buffer;
+
+    checkHttpType(req, socket);
+
+    printf("------------------Hello message sent-------------------\n");
+    close(socket);
 }
