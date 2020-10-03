@@ -1,7 +1,7 @@
 #!/bin/bash
 
-for N in {1..50}
+for N in {1..150}
 do
-    ./client &
+    python3 client.py &
 done
 wait
