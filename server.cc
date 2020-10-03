@@ -30,6 +30,14 @@ int Num_Threads = thread::hardware_concurrency();
 
 int main(int argc, char const *argv[])
 {
+    auto start = std::chrono::high_resolution_clock::now();
+    cout << Num_Threads << endl;
+    // vector<thread> threads;
+
+    // for (int i = 0; i < Num_Threads; i++)
+    // {
+    //     threads.
+    // }
 
     int server_fd, new_socket;
 
@@ -74,8 +82,10 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
 
-        // should be multithreaded
-        handleConnection(new_socket);
+        // handleConnection(new_socket);
+
+        thread t(&handleConnection, new_socket);
+        t.detach();
     }
     printf("------------------Closing connection-------------------\n");
 
@@ -140,6 +150,7 @@ void httpRes(ifstream &file, string res, int socket)
 
 void handleConnection(int socket)
 {
+    sleep(1);
     long valread;
     char buffer[30000] = {0};
     // not sure what is it used
