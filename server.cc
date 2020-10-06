@@ -19,18 +19,17 @@ using namespace std;
 
 #define PORT 8080
 #define THREAD_POOL_SIZE 20
+typedef void (*Connection)(int);
 
 //https://stackoverflow.com/questions/121162/what-does-the-explicit-keyword-mean
 
 class ThreadPool
 {
 public:
-    // creating an empty function as a wrapper, not sure wh
-    using Task = std::function<void()>;
     // try to remove the explicit and see whats going on
-    explicit ThreadPool(size_t numThreads)
+    explicit ThreadPool(size_t numThreads, int socket)
     {
-        start(numThreads);
+        start(numThreads, socket);
     }
     ~ThreadPool()
     {
@@ -38,7 +37,7 @@ public:
     }
 
     // adding tasks to the queue
-    void enqueuq(Task task)
+    void enqueuq(Connection task)
     {
         // why are we creating another scope?
         {
@@ -59,15 +58,16 @@ private:
 
     bool stopping = false;
     // hold the list of task to be executed on the thread pool
-    queue<Task> tasks;
-    void start(size_t numThreads)
+    queue<Connection> tasks;
+    void start(size_t numThreads, int socket)
     {
-        for (int i = 0; i < Num_Threads; i++)
+        for (int i = 0; i < numThreads; i++)
         {
             threads.emplace_back([=] {
                 while (true)
                 {
-                    Task task;
+
+                    Connection task;
                     // we created another scope cause we don't want the mutex to be lock while the task is executing(11:30)
                     {
                         // what is uniuq lock?
@@ -78,18 +78,19 @@ private:
                         if (stopping && tasks.empty())
                             break;
 
-                        //again not sure what is the move, but it is related to the using Task. but here we are taking a task from the queue and then poping it
+                        //again not sure what is the move, probably calling the varible
                         task = move(tasks.front());
                         tasks.pop();
                     }
                     // not sure what is executing here
-                    task();
+                    cout << "how many times?" << endl;
+                    task(socket);
                 }
             });
         }
     }
     // tell the program not to throw an exception and if it does just let the program crash
-    void stop() noexcept
+    void stop()
     {
         {
             unique_lock<mutex> lock{eventMutex};
@@ -108,10 +109,6 @@ void httpRes(ifstream &file, string res, int socket);
 void handleConnection(int socket);
 
 int Num_Threads = thread::hardware_concurrency();
-
-// notes:
-// create a place with dedicted http respons
-// start to look into testing
 
 int main(int argc, char const *argv[])
 {
@@ -166,12 +163,13 @@ int main(int argc, char const *argv[])
         // thread t(&handleConnection, new_socket);
         // t.detach();
 
-        ThreadPool pool{4};
+        ThreadPool pool{4, new_socket};
+        pool.enqueuq(&handleConnection);
 
-        for (auto i = 0; i < 4; i++)
-        {
-            pool.enqueuq(&handleConnection, new_socket)
-        }
+        // for (auto i = 0; i < 4; i++)
+        // {
+        //     cout << "Creating new connections?" << endl;
+        // }
     }
     printf("------------------Closing connection-------------------\n");
 
