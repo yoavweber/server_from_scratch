@@ -14,95 +14,12 @@
 #include <vector>
 #include <queue>
 #include <condition_variable>
+#include "threadpool.h"
 
 using namespace std;
 
 #define PORT 8080
-#define THREAD_POOL_SIZE 20
-typedef void (*Connection)(int);
-
-//https://stackoverflow.com/questions/121162/what-does-the-explicit-keyword-mean
-
-class ThreadPool
-{
-public:
-    // try to remove the explicit and see whats going on
-    explicit ThreadPool(size_t numThreads, int socket)
-    {
-        start(numThreads, socket);
-    }
-    ~ThreadPool()
-    {
-        stop();
-    }
-
-    // adding tasks to the queue
-    void enqueuq(Connection task)
-    {
-        // why are we creating another scope?
-        {
-            unique_lock<mutex> lock{eventMutex};
-            // insert element to the queue, not sure why using the move
-            tasks.emplace(move(task));
-        }
-        // notifying one of the threads to wake up and take the job
-        eventVar.notify_one();
-    }
-
-private:
-    vector<thread> threads;
-
-    condition_variable eventVar;
-
-    mutex eventMutex;
-
-    bool stopping = false;
-    // hold the list of task to be executed on the thread pool
-    queue<Connection> tasks;
-    void start(size_t numThreads, int socket)
-    {
-        for (int i = 0; i < numThreads; i++)
-        {
-            threads.emplace_back([=] {
-                while (true)
-                {
-
-                    Connection task;
-                    // we created another scope cause we don't want the mutex to be lock while the task is executing(11:30)
-                    {
-                        // what is uniuq lock?
-                        unique_lock<mutex> lock{eventMutex};
-                        // the event varible would wake up if we are stopping or if there is task in the queue
-                        eventVar.wait(lock, [=] { return stopping || !tasks.empty(); });
-                        // if its stoping and there are no more tasks we can get out of the thread
-                        if (stopping && tasks.empty())
-                            break;
-
-                        //again not sure what is the move, probably calling the varible
-                        task = move(tasks.front());
-                        tasks.pop();
-                    }
-                    // not sure what is executing here
-                    cout << "how many times?" << endl;
-                    task(socket);
-                }
-            });
-        }
-    }
-    // tell the program not to throw an exception and if it does just let the program crash
-    void stop()
-    {
-        {
-            unique_lock<mutex> lock{eventMutex};
-            stopping = true;
-        }
-
-        eventVar.notify_all();
-        for (auto &thread : threads)
-            //stop each thread from executitaion
-            thread.join();
-    }
-};
+#define THREAD_POOL_SIZE 4
 
 void checkHttpType(string position, int socket);
 void httpRes(ifstream &file, string res, int socket);
@@ -163,7 +80,7 @@ int main(int argc, char const *argv[])
         // thread t(&handleConnection, new_socket);
         // t.detach();
 
-        ThreadPool pool{4, new_socket};
+        ThreadPool pool{THREAD_POOL_SIZE, new_socket};
         pool.enqueuq(&handleConnection);
 
         // for (auto i = 0; i < 4; i++)
@@ -190,11 +107,11 @@ void checkHttpType(string position, int socket)
         cout << filePath + ".html" << endl;
         if (filePath.size() == 0)
         {
-            inFile.open("index.html");
+            inFile.open("static/index.html");
         }
         else
         {
-            inFile.open(filePath + ".html");
+            inFile.open("static/" + filePath + ".html");
         }
         inFile.seekg(0, inFile.end);
         int size = inFile.tellg();
@@ -207,7 +124,7 @@ void checkHttpType(string position, int socket)
         }
         else
         {
-            inFile.open("404.html");
+            inFile.open("static/404.html");
             string Response404 = "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: ";
 
             httpRes(inFile, Response404, socket);
