@@ -34,7 +34,7 @@ public:
     }
 
     // adding tasks to the queue
-    void enqueuq(Connection task)
+    inline void enqueuq(Connection task)
     {
         // why are we creating another scope?
         {
