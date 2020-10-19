@@ -15,6 +15,7 @@
 #include <queue>
 #include <condition_variable>
 #include "threadpool.h"
+#include "parser.h"
 
 using namespace std;
 
@@ -96,18 +97,35 @@ int main(int argc, char const *argv[])
 void checkHttpType(string position, int socket)
 // return the string and handle sending the information outside of the socket
 {
+    cout << position << endl;
     auto httpMethodPosition = position.find(" ");
     auto tests = position.find(" ", httpMethodPosition + 1);
+    auto isWebsocketStart = position.find("Upgrade: ");
+    auto isWebsocketend = position.find(" ", isWebsocketStart);
+
+    cout << isWebsocketend << endl;
+
+    HttpParser test{position};
+    test.validWebSocketConnection();
+
+    // lower case the filepath
     string filePath = position.substr(httpMethodPosition + 2, tests - 5); // not sure why this is finding two more char after the space
     string httpMethod = position.substr(0, httpMethodPosition);
+
     if (httpMethod == "GET")
     {
+
         ifstream inFile;
 
         cout << filePath + ".html" << endl;
         if (filePath.size() == 0)
         {
             inFile.open("static/index.html");
+        }
+        else if (filePath == "chat")
+        {
+            cout << "open a websocket here!" << endl;
+            auto isWebsocket = position.find("Upgrade: ");
         }
         else
         {
