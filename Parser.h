@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <iterator>
-
+#include <regex>
 #include <bits/stdc++.h>
 #include <openssl/sha.h>
 #include "base64.cpp"
@@ -18,9 +18,7 @@ class HttpParser
 {
 public:
     explicit HttpParser(std::string req)
-    {
-        splitToLines(req);
-    };
+        : req(req){};
 
     std::string getHeader(std::string req)
     {
@@ -46,7 +44,11 @@ public:
             "Upgrade: websocket\r\n"
             "Connection: Upgrade\r\n"
             "Sec-WebSocket-Accept: " +
-            key + "\r\n";
+            key + "\r\n"
+                  "\r\n";
+
+        std::cout << response << "!!!!!!!!!!!" << std::endl;
+
         return response;
     }
 
@@ -54,22 +56,22 @@ public:
     {
         // check http version
         // create a function that recive a string and give the index after the space
-        auto isWebsocket = requestLines[2].find(" ");
-        auto isUpgrade = requestLines[3].find(" ");
-        std::string websocket = requestLines[2].substr(isWebsocket);
-        std::string upgrade = requestLines[3].substr(isUpgrade);
-        getWebsocketAcceptKey();
+        std::string websocket = getReqLineValue("Upgrade: ");
+        // std::string websocket = getReqLineValue("Upgrade: ");
+        std::string upgrade = getReqLineValue("Connection: ");
+        // getWebsocketAcceptKey();
+        std::cout << websocket << upgrade << std::endl;
 
         if (websocket == "websocket" && upgrade == "Upgrade")
         {
             return true;
         }
-        // std::cout << upgrade << std::endl;
         return false;
     }
 
 protected:
     std::vector<std::string> requestLines;
+    std::string req;
 
     void splitToLines(std::string req)
     {
@@ -82,12 +84,27 @@ protected:
         }
     }
 
+    std::string getLine(std::string keyWord)
+    {
+        std::regex r("\s*" + keyWord + "\s*.*"); // entire match will be 2 numbers
+        std::smatch m;
+        std::regex_search(req, m, r);
+        auto v = m[0];
+        return v;
+    }
+
+    std::string getReqLineValue(std::string keyWord)
+    {
+        std::string firstWordLine = getLine(keyWord);
+        auto wordIndex = firstWordLine.find(" ");
+        std::string requiredValue = firstWordLine.substr(wordIndex + 1);
+        return requiredValue;
+    }
+
     std::string getWebsocketAcceptKey()
     {
-        auto webSocketKeyIndex = requestLines[4].find(" ");
-        std::string webSocketKey = requestLines[4].substr(webSocketKeyIndex);
+        std::string webSocketKey = getReqLineValue("Sec-WebSocket-Key: ");
         std::string keyAndHash = webSocketKey + WEBSOCKETHASH;
-
         std::string binaryHash = sha1(keyAndHash);
         std::vector<base64::byte> data(begin(binaryHash), end(binaryHash));
         auto encoded = base64::encode(data);

@@ -32,7 +32,6 @@ int Num_Threads = thread::hardware_concurrency();
 int main(int argc, char const *argv[])
 {
     auto start = std::chrono::high_resolution_clock::now();
-    cout << Num_Threads << endl;
 
     int server_fd, new_socket;
 
@@ -82,7 +81,7 @@ int main(int argc, char const *argv[])
         // thread t(&handleConnection, new_socket);
         // t.detach();
 
-        ThreadPool pool{THREAD_POOL_SIZE, new_socket};
+        ThreadPool pool{THREAD_POOL_SIZE - 1, new_socket};
         pool.enqueuq(&handleConnection);
 
         // for (auto i = 0; i < 4; i++)
@@ -104,8 +103,6 @@ void checkHttpType(string position, int socket)
     auto isWebsocketStart = position.find("Upgrade: ");
     auto isWebsocketend = position.find(" ", isWebsocketStart);
 
-    cout << isWebsocketend << endl;
-
     // WebSocket testWeb{position};
 
     // if (webSocket.validWebSocketConnection())
@@ -113,6 +110,9 @@ void checkHttpType(string position, int socket)
     // }
 
     // lower case the filepath
+    HttpParser webSocket{position};
+    webSocket.validWebSocketConnection();
+
     string filePath = position.substr(httpMethodPosition + 2, tests - 5); // not sure why this is finding two more char after the space
     string httpMethod = position.substr(0, httpMethodPosition);
 
