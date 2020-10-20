@@ -14,8 +14,9 @@
 #include <vector>
 #include <queue>
 #include <condition_variable>
-#include "threadpool.h"
-#include "parser.h"
+#include "Threadpool.h"
+#include "Parser.h"
+//#include "WebSocket.h"
 
 using namespace std;
 
@@ -105,8 +106,11 @@ void checkHttpType(string position, int socket)
 
     cout << isWebsocketend << endl;
 
-    HttpParser test{position};
-    test.validWebSocketConnection();
+    // WebSocket testWeb{position};
+
+    // if (webSocket.validWebSocketConnection())
+    // {
+    // }
 
     // lower case the filepath
     string filePath = position.substr(httpMethodPosition + 2, tests - 5); // not sure why this is finding two more char after the space
@@ -124,8 +128,15 @@ void checkHttpType(string position, int socket)
         }
         else if (filePath == "chat")
         {
+
             cout << "open a websocket here!" << endl;
+            HttpParser webSocket{position};
             auto isWebsocket = position.find("Upgrade: ");
+            if (webSocket.validWebSocketConnection())
+            {
+                webSocket.sendResponse();
+                cout << "sent response!" << endl;
+            }
         }
         else
         {

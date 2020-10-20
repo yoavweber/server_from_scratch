@@ -38,6 +38,18 @@ public:
         return filePath;
     }
 
+    std::string sendResponse()
+    {
+        std::string key = getWebsocketAcceptKey();
+        std::string response =
+            "HTTP/1.1 101 Switching Protocols\r\n"
+            "Upgrade: websocket\r\n"
+            "Connection: Upgrade\r\n"
+            "Sec-WebSocket-Accept: " +
+            key + "\r\n";
+        return response;
+    }
+
     bool validWebSocketConnection()
     {
         // check http version
@@ -56,7 +68,7 @@ public:
         return false;
     }
 
-private:
+protected:
     std::vector<std::string> requestLines;
 
     void splitToLines(std::string req)
@@ -79,7 +91,7 @@ private:
         std::string binaryHash = sha1(keyAndHash);
         std::vector<base64::byte> data(begin(binaryHash), end(binaryHash));
         auto encoded = base64::encode(data);
-        std::cout << encoded << std::endl;
+        //std::cout << encoded << std::endl;
         return encoded;
     }
 
