@@ -21,11 +21,10 @@
 using namespace std;
 
 #define PORT 8080
-#define THREAD_POOL_SIZE 4
 
 void checkHttpType(string position, int socket);
 void httpRes(ifstream &file, string res, int socket);
-void handleConnection(int socket);
+void acceptConnection(int socket);
 
 int Num_Threads = thread::hardware_concurrency();
 
@@ -61,13 +60,13 @@ int main(int argc, char const *argv[])
         perror("In bind");
         exit(EXIT_FAILURE);
     }
-    // prepring the accept connection from socket, would que 10 before further requts would be refuesd
+    // prepring the accept connection from socket, would que 100 before further requts would be refuesd
     if (listen(server_fd, 100) < 0)
     {
         perror("In listen");
         exit(EXIT_FAILURE);
     }
-    while (1)
+    while (true)
     {
         printf("\n+++++++ Waiting for new connection ++++++++\n\n");
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
@@ -75,19 +74,9 @@ int main(int argc, char const *argv[])
             perror("In accept");
             exit(EXIT_FAILURE);
         }
-
-        // handleConnection(new_socket);
-        // multithread without pool
-        // thread t(&handleConnection, new_socket);
-        // t.detach();
-
-        ThreadPool pool{THREAD_POOL_SIZE - 1, new_socket};
-        pool.enqueuq(&handleConnection);
-
-        // for (auto i = 0; i < 4; i++)
-        // {
-        //     cout << "Creating new connections?" << endl;
-        // }
+        // ThreadPool pool{Num_Threads - 1, new_socket};
+        // pool.enqueuq(&acceptConnection);
+        acceptConnection(new_socket);
     }
     printf("------------------Closing connection-------------------\n");
 
@@ -109,10 +98,8 @@ void checkHttpType(string position, int socket)
     // {
     // }
 
+    HttpParser parser{position};
     // lower case the filepath
-    HttpParser webSocket{position};
-    webSocket.validWebSocketConnection();
-
     string filePath = position.substr(httpMethodPosition + 2, tests - 5); // not sure why this is finding two more char after the space
     string httpMethod = position.substr(0, httpMethodPosition);
 
@@ -120,8 +107,6 @@ void checkHttpType(string position, int socket)
     {
 
         ifstream inFile;
-
-        cout << filePath + ".html" << endl;
         if (filePath.size() == 0)
         {
             inFile.open("static/index.html");
@@ -129,13 +114,30 @@ void checkHttpType(string position, int socket)
         else if (filePath == "chat")
         {
 
-            cout << "open a websocket here!" << endl;
             HttpParser webSocket{position};
-            auto isWebsocket = position.find("Upgrade: ");
             if (webSocket.validWebSocketConnection())
             {
-                webSocket.sendResponse();
-                cout << "sent response!" << endl;
+                cout << "open a websocket here!" << endl;
+
+                string test = webSocket.sendResponse();
+                char *cstr = new char[test.length() + 1];
+                strcpy(cstr, test.c_str());
+
+                send(socket, cstr, test.size(), 1);
+                char buffer[30000] = {0};
+
+                long valread = read(socket, buffer, 30000);
+                string req = buffer;
+
+                cout << req << "second request" << endl;
+
+                // while (true)
+                // {
+                //     char buffer[30000] = {0};
+
+                //     long valread = read(socket, buffer, 30000);
+                //     string req = buffer;
+                // }
             }
         }
         else
@@ -160,7 +162,8 @@ void checkHttpType(string position, int socket)
         }
     }
 }
-
+// create websocket resposne
+// HTTP response for GET
 void httpRes(ifstream &file, string res, int socket)
 {
     int size = file.tellg();
@@ -178,16 +181,17 @@ void httpRes(ifstream &file, string res, int socket)
     file.close();
 }
 
-void handleConnection(int socket)
+void acceptConnection(int socket)
 {
     long valread;
+    //// not why I assign this number
     char buffer[30000] = {0};
-    // not sure what is it used
+
     valread = read(socket, buffer, 30000);
     string req = buffer;
 
     checkHttpType(req, socket);
 
-    printf("------------------Hello message sent-------------------\n");
+    printf("------------------HTTP responed has be sent-------------------\n");
     close(socket);
 }
