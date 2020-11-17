@@ -15,10 +15,14 @@
 #include <queue>
 #include <condition_variable>
 #include "Threadpool.h"
+#include "net/socket.h"
 #include "Parser.h"
-//#include "WebSocket.h"
+#include "routes.h"
+// #include "WebSocket.h"
 
 using namespace std;
+using namespace net;
+using namespace route;
 
 #define PORT 8080
 
@@ -28,6 +32,9 @@ void acceptConnection(int socket);
 
 int Num_Threads = thread::hardware_concurrency();
 
+// move it to the main scope and intilize it with a constructor
+
+Socket socketClass;
 int main(int argc, char const *argv[])
 {
     auto start = std::chrono::high_resolution_clock::now();
@@ -69,6 +76,7 @@ int main(int argc, char const *argv[])
     while (true)
     {
         printf("\n+++++++ Waiting for new connection ++++++++\n\n");
+
         if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
         {
             perror("In accept");
@@ -76,6 +84,7 @@ int main(int argc, char const *argv[])
         }
         // ThreadPool pool{Num_Threads - 1, new_socket};
         // pool.enqueuq(&acceptConnection);
+
         acceptConnection(new_socket);
     }
     printf("------------------Closing connection-------------------\n");
@@ -86,77 +95,71 @@ int main(int argc, char const *argv[])
 void checkHttpType(string position, int socket)
 // return the string and handle sending the information outside of the socket
 {
+    // should move to parser
     cout << position << endl;
     auto httpMethodPosition = position.find(" ");
     auto tests = position.find(" ", httpMethodPosition + 1);
     auto isWebsocketStart = position.find("Upgrade: ");
     auto isWebsocketend = position.find(" ", isWebsocketStart);
 
-    // WebSocket testWeb{position};
-
-    // if (webSocket.validWebSocketConnection())
-    // {
-    // }
-
-    HttpParser parser{position};
     // lower case the filepath
     string filePath = position.substr(httpMethodPosition + 2, tests - 5); // not sure why this is finding two more char after the space
     string httpMethod = position.substr(0, httpMethodPosition);
 
     if (httpMethod == "GET")
     {
-
+        RoutesHandler routes;
         ifstream inFile;
+        routes.sendStaticFile("test", "test", 1);
         if (filePath.size() == 0)
         {
             inFile.open("static/index.html");
         }
-        else if (filePath == "chat")
-        {
+        // else if (filePath == "chat")
+        // {
 
-            HttpParser webSocket{position};
-            if (webSocket.validWebSocketConnection())
-            {
-                cout << "open a websocket here!" << endl;
+        //     WebSocket webSocket;
+        //     if (webSocket.validWebSocketConnection())
+        //     {
+        //         cout << "open a websocket here!" << endl;
 
-                string test = webSocket.sendResponse();
-                char *cstr = new char[test.length() + 1];
-                strcpy(cstr, test.c_str());
+        //         string webSocketResponse = webSocket.sendHandShake();
+        //         // sending http page
+        //         sendStringViaSocket(socket, webSocketResponse);
 
-                send(socket, cstr, test.size(), 1);
-                char buffer[30000] = {0};
+        //         inFile.is_open();
+        //         string successResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
+        //         httpRes(inFile, successResponse, socket);
+        //         sendStringViaSocket(socket, "webSocketResponse");
+        //         testing = true;
 
-                long valread = read(socket, buffer, 30000);
-                string req = buffer;
-
-                cout << req << "second request" << endl;
-
-                // while (true)
-                // {
-                //     char buffer[30000] = {0};
-
-                //     long valread = read(socket, buffer, 30000);
-                //     string req = buffer;
-                // }
-            }
-        }
+        //         while (true)
+        //         {
+        //             string req = bufferToString(socket);
+        //             // cout << req << endl;
+        //             if (req != "")
+        //             {
+        //                 cout << req << endl;
+        //             }
+        //         }
+        //     }
+        // }
         else
         {
             inFile.open("static/" + filePath + ".html");
         }
-        inFile.seekg(0, inFile.end);
-        int size = inFile.tellg();
-        inFile.seekg(0, inFile.beg);
 
         if (inFile.is_open())
         {
             string successResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
             httpRes(inFile, successResponse, socket);
+            cout << "sending success?" << endl;
         }
         else
         {
             inFile.open("static/404.html");
             string Response404 = "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: ";
+            cout << "sending failed?" << endl;
 
             httpRes(inFile, Response404, socket);
         }
@@ -171,27 +174,20 @@ void httpRes(ifstream &file, string res, int socket)
                    (istreambuf_iterator<char>()));
     int contentLengthInt = content.size();
     string contentLength = to_string(contentLengthInt);
-    string Response404 = res + contentLength + "\n\n";
-    Response404.append(content);
+    string response = res + contentLength + "\n\n";
+    response.append(content);
 
-    char *cstr = new char[Response404.length() + 1];
-    strcpy(cstr, Response404.c_str());
+    socketClass.sendStringViaSocket(socket, response);
 
-    send(socket, cstr, size + 1000, 1);
     file.close();
 }
 
 void acceptConnection(int socket)
 {
-    long valread;
-    //// not why I assign this number
-    char buffer[30000] = {0};
 
-    valread = read(socket, buffer, 30000);
-    string req = buffer;
-
+    string req = socketClass.bufferToString(socket);
     checkHttpType(req, socket);
 
     printf("------------------HTTP responed has be sent-------------------\n");
-    close(socket);
+    // close(socket);
 }
