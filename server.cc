@@ -17,7 +17,7 @@
 #include "Threadpool.h"
 #include "net/socket.h"
 #include "Parser.h"
-#include "routes.h"
+#include "./http/routes.h"
 // #include "WebSocket.h"
 
 using namespace std;
@@ -37,55 +37,63 @@ int Num_Threads = thread::hardware_concurrency();
 Socket socketClass;
 int main(int argc, char const *argv[])
 {
+    //not sure why it is there
     auto start = std::chrono::high_resolution_clock::now();
 
-    int server_fd, new_socket;
+    Socket test;
+    test.Bind();
+    test.Listen();
+    test.Accept();
+    // cout << t << "socket number?" << endl;
+    // int server_fd,
+    //     new_socket;
 
-    struct sockaddr_in address;
-    int addrlen = sizeof(address);
+    // struct sockaddr_in address;
+    // int addrlen = sizeof(address);
 
-    // Creating socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-    {
-        perror("In socket");
-        exit(EXIT_FAILURE);
-    }
+    // // Creating socket file descriptor
+    // if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    // {
+    //     perror("In socket");
+    //     exit(EXIT_FAILURE);
+    // }
 
-    // choose protocol
-    address.sin_family = AF_INET;
-    //choose interface to bind to(currently binding to all interfaces)
-    address.sin_addr.s_addr = INADDR_ANY;
-    //choose port
-    address.sin_port = htons(PORT);
+    // // choose protocol
+    // address.sin_family = AF_INET;
+    // //choose interface to bind to(currently binding to all interfaces)
+    // address.sin_addr.s_addr = INADDR_ANY;
+    // //choose port
+    // address.sin_port = htons(PORT);
 
-    //no sure whats going in here
-    memset(address.sin_zero, '\0', sizeof address.sin_zero);
+    // //no sure whats going in here
+    // memset(address.sin_zero, '\0', sizeof address.sin_zero);
 
-    //listening to the created socket
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
-    {
-        perror("In bind");
-        exit(EXIT_FAILURE);
-    }
-    // prepring the accept connection from socket, would que 100 before further requts would be refuesd
-    if (listen(server_fd, 100) < 0)
-    {
-        perror("In listen");
-        exit(EXIT_FAILURE);
-    }
+    // //listening to the created socket
+    // if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+    // {
+    //     perror("In bind");
+    //     exit(EXIT_FAILURE);
+    // }
+    // // prepring the accept connection from socket, would que 100 before further requts would be refuesd
+    // if (listen(server_fd, 100) < 0)
+    // {
+    //     perror("In listen");
+    //     exit(EXIT_FAILURE);
+    // }
     while (true)
     {
         printf("\n+++++++ Waiting for new connection ++++++++\n\n");
+        test.Accept();
 
-        if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
-        {
-            perror("In accept");
-            exit(EXIT_FAILURE);
-        }
-        // ThreadPool pool{Num_Threads - 1, new_socket};
-        // pool.enqueuq(&acceptConnection);
+        // if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0)
+        // {
+        //     perror("In accept");
+        //     exit(EXIT_FAILURE);
+        // }
+        // // ThreadPool pool{Num_Threads - 1, new_socket};
+        // // pool.enqueuq(&acceptConnection);
 
-        acceptConnection(new_socket);
+        // acceptConnection(new_socket);
     }
     printf("------------------Closing connection-------------------\n");
 
