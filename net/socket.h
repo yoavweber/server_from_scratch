@@ -21,7 +21,7 @@ namespace net
         // explicit Socket(int socket, sockaddr_in address, int port) : m_socket(socket), m_address(address), m_port(port){};
         Socket();
         // change buffer to string to read
-        std::string bufferToString(int socket);
+        std::string bufferToString();
 
         int getSocket()
         {
@@ -34,7 +34,7 @@ namespace net
         void Listen();
         void Accept();
         void Close();
-        void sendStringViaSocket(int socket, std::string text);
+        void sendStringViaSocket(std::string text);
         // private:
         //     void Bind();
     };

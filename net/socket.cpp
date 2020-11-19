@@ -16,22 +16,27 @@ using namespace net;
 
 Socket::Socket()
 {
+    // if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+    // {
+    //     perror("In socket");
+    //     exit(EXIT_FAILURE);
+    // }
     server_fd = (int)(socket(AF_INET, SOCK_STREAM, 0));
     if (server_fd == 0)
         throw runtime_error("cannot create socket");
 }
 
-void Socket::sendStringViaSocket(int socket, string text)
+void Socket::sendStringViaSocket(string text)
 {
-    cout << "response sent" << endl;
-
     char *cstr = new char[text.length() + 1];
     strcpy(cstr, text.c_str());
-    send(socket, cstr, text.size(), 1);
+    int test = strlen(cstr);
+    int byte = send(m_socket, cstr, test, 0);
 }
 
 void Socket::Bind()
 {
+    cout << m_address.sin_family << endl;
     m_addrlen = sizeof(m_address);
 
     // choose protocol
@@ -42,7 +47,7 @@ void Socket::Bind()
     m_address.sin_port = htons(PORT);
 
     memset(m_address.sin_zero, '\0', sizeof m_address.sin_zero);
-    cout << server_fd << " server fd" << endl;
+    // cout << server_fd << " server fd" << endl;
     if (bind(server_fd, (struct sockaddr *)&m_address, sizeof(m_address)) < 0)
         throw runtime_error("bind failed");
 
@@ -51,12 +56,13 @@ void Socket::Bind()
 
 void Socket::Accept()
 {
-    int sock_accept = accept(server_fd, (struct sockaddr *)&m_address, (socklen_t *)&m_addrlen);
+    int sock_accept;
+    sock_accept = accept(server_fd, (struct sockaddr *)&m_address, (socklen_t *)&m_addrlen);
     if (sock_accept < 0)
         runtime_error("cannot accept on socket");
 
     m_socket = sock_accept;
-    cout << m_socket << " in accept?" << endl;
+    cout << " the member socket in accept" << m_socket << endl;
 }
 
 void Socket::Listen()
@@ -74,12 +80,12 @@ void Socket::Close()
     m_socket = 0;
 }
 
-string Socket::bufferToString(int socket)
+string Socket::bufferToString()
 {
     long valread;
     // create a function read into string
     char buffer[30000] = {0};
-    valread = read(socket, buffer, 30000);
+    valread = read(m_socket, buffer, 30000);
     string req = buffer;
     return req;
 }
