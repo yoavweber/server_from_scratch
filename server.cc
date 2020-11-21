@@ -16,13 +16,16 @@
 #include <condition_variable>
 #include "Threadpool.h"
 #include "net/socket.h"
-#include "Parser.h"
+#include "parser.h"
 #include "./http/routes.h"
-// #include "WebSocket.h"
+#include "webSocket.h"
+#include <bitset>
 
 using namespace std;
 using namespace net;
 using namespace route;
+using namespace parser;
+using namespace websocket;
 
 #define PORT 8080
 
@@ -62,21 +65,44 @@ int main(int argc, char const *argv[])
 void checkHttpType(string position, Socket socket)
 // return the string and handle sending the information outside of the socket
 {
-    // should move to parser
 
-    auto httpMethodPosition = position.find(" ");
-    auto tests = position.find(" ", httpMethodPosition + 1);
+    HttpParser parser{position};
+    string httpMethod = parser.getHeader();
+
     auto isWebsocketStart = position.find("Upgrade: ");
     auto isWebsocketend = position.find(" ", isWebsocketStart);
 
-    // lower case the filepath
-    string filePath = position.substr(httpMethodPosition + 2, tests - 5); // not sure why this is finding two more char after the space
-    string httpMethod = position.substr(0, httpMethodPosition);
     if (httpMethod == "GET")
     {
         RoutesHandler routes;
         ifstream inFile;
-        routes.sendStaticFile(filePath, socket);
+        string filePath = parser.getPath();
+        // routes.sendStaticFile(filePath, socket);
+
+        // not sure where to position this, in the route?
+        if (filePath == "chat")
+        {
+            WebSocket webSocketInstense{position};
+            if (webSocketInstense.validWebSocketConnection())
+            {
+                cout << "the websocket connection is valid" << endl;
+                string webSocketResponse = webSocketInstense.getHandShake();
+                socket.sendStringViaSocket(webSocketResponse);
+                routes.sendStaticFile(filePath, socket);
+                string clientMessage = socket.bufferToString();
+                // for (int i = 0; i < req1.length(); i++)
+                // {
+                //     auto t = bitset<8>(req1[i]);
+                //     cout << t << endl;
+                // }
+
+                webSocketInstense.decodeFrame(clientMessage);
+            }
+        }
+        else
+        {
+            routes.sendStaticFile(filePath, socket);
+        }
         // if (filePath.size() == 0)
         // {
         //     inFile.open("static/index.html");
@@ -132,21 +158,6 @@ void checkHttpType(string position, Socket socket)
     }
 }
 // create websocket resposne
-// HTTP response for GET
-// void httpRes(ifstream &file, string res)
-// {
-//     int size = file.tellg();
-//     string content((istreambuf_iterator<char>(file)),
-//                    (istreambuf_iterator<char>()));
-//     int contentLengthInt = content.size();
-//     string contentLength = to_string(contentLengthInt);
-//     string response = res + contentLength + "\n\n";
-//     response.append(content);
-
-//     socketClass.sendStringViaSocket(response);
-
-//     file.close();
-// }
 
 // think where this should go
 void acceptConnection(Socket socket)
