@@ -121,9 +121,36 @@ dataFrame WebSocket::decodeFrame(string rawData)
     {
         c = c ^ data.mask_key[i++ % 4];
     };
-
     cout << data.payload << endl;
+
     return data;
+}
+
+//currently sends only one message(fin is true)
+//currently the payload would always be 1
+string WebSocket::encodeFrame(string data)
+{
+    string frameData;
+    // string dataSize = bitset<8>(data.size()).to_string();
+    int dataSize = data.size() | 0b0000'0000;
+
+    frameData = 0b1000'0001;
+
+    frameData += dataSize;
+
+    // adding the payload info to the string
+    for (char &_char : data)
+    {
+        frameData += _char | 0b0000'0000;
+    }
+
+    // for (int i = 0; i < frameData.length(); i++)
+    // {
+    //     auto t = bitset<8>(frameData[i]);
+    //     cout << t << endl;
+    // }
+
+    return frameData;
 }
 
 string WebSocket::getWebsocketAcceptKey()

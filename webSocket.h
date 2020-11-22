@@ -55,6 +55,8 @@ namespace websocket
         // }
         dataFrame decodeFrame(std::string rawData);
 
+        std::string encodeFrame(std::string rawData);
+
         bool validWebSocketConnection();
         // {
         //     // check http version

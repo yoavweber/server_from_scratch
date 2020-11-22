@@ -46,11 +46,11 @@ int main(int argc, char const *argv[])
     Socket socket;
     socket.Bind();
     socket.Listen();
+    printf("\n+++++++ Waiting for new connection ++++++++\n\n");
 
     while (true)
     {
         socket.Accept();
-        printf("\n+++++++ Waiting for new connection ++++++++\n\n");
 
         // // ThreadPool pool{Num_Threads - 1, new_socket};
         // // pool.enqueuq(&acceptConnection);
@@ -97,6 +97,11 @@ void checkHttpType(string position, Socket socket)
                 // }
 
                 webSocketInstense.decodeFrame(clientMessage);
+                // cout << webSocketInstense.encodeFrame("hey") << "the bits" << endl;
+                // socket.sendStringViaSocket("hey");
+
+                socket.sendStringViaSocket(webSocketInstense.encodeFrame("hey"));
+                routes.sendStaticFile(filePath, socket);
             }
         }
         else
