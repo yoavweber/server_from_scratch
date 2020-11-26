@@ -27,9 +27,7 @@ using namespace route;
 using namespace parser;
 using namespace websocket;
 
-#define PORT 8080
-
-void checkHttpType(string position, Socket socket);
+void checkHttpType(string req, Socket socket);
 void httpRes(ifstream &file, string res);
 void acceptConnection(Socket socket);
 
@@ -37,7 +35,6 @@ int Num_Threads = thread::hardware_concurrency();
 
 // move it to the main scope and intilize it with a constructor
 
-Socket socketClass;
 int main(int argc, char const *argv[])
 {
     //not sure why it is there
@@ -62,104 +59,69 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-void checkHttpType(string position, Socket socket)
+void checkHttpType(string req, Socket socket)
 // return the string and handle sending the information outside of the socket
 {
 
-    HttpParser parser{position};
-    string httpMethod = parser.getHeader();
+    HttpParser parser{req};
+    RoutesHandler routes;
 
-    auto isWebsocketStart = position.find("Upgrade: ");
-    auto isWebsocketend = position.find(" ", isWebsocketStart);
+    cout << req << endl;
+    string httpMethod = parser.getHeader();
+    string filePath = parser.getPath();
 
     if (httpMethod == "GET")
     {
-        RoutesHandler routes;
         ifstream inFile;
-        string filePath = parser.getPath();
-        // routes.sendStaticFile(filePath, socket);
-
-        // not sure where to position this, in the route?
         if (filePath == "chat")
         {
-            WebSocket webSocketInstense{position};
+
+            WebSocket webSocketInstense{req};
+
             if (webSocketInstense.validWebSocketConnection())
             {
+
                 cout << "the websocket connection is valid" << endl;
                 string webSocketResponse = webSocketInstense.getHandShake();
                 socket.sendStringViaSocket(webSocketResponse);
-                routes.sendStaticFile(filePath, socket);
+
+                // must send 200 after handshake, not sure why I need contet type(204 is not working)
+                string successResponse = "HTTP/1.1 200 OK\n\n";
+                socket.sendStringViaSocket(successResponse);
+
                 string clientMessage = socket.bufferToString();
-                // for (int i = 0; i < req1.length(); i++)
-                // {
-                //     auto t = bitset<8>(req1[i]);
-                //     cout << t << endl;
-                // }
 
                 webSocketInstense.decodeFrame(clientMessage);
-                // cout << webSocketInstense.encodeFrame("hey") << "the bits" << endl;
-                // socket.sendStringViaSocket("hey");
 
                 socket.sendStringViaSocket(webSocketInstense.encodeFrame("hey"));
-                routes.sendStaticFile(filePath, socket);
+
+                while (true)
+                {
+                    string clientMessageCrypt = socket.bufferToString();
+                    string test = webSocketInstense.encodeFrame("test");
+                    socket.sendStringViaSocket(test);
+                    dataFrame clientFrame = webSocketInstense.decodeFrame(clientMessageCrypt);
+                    if (clientFrame.opcode == 8)
+                    {
+                        socket.Close();
+                        break;
+                    }
+                    string clientMessage = clientFrame.payload;
+                    if (clientMessage != "")
+                    {
+
+                        cout << clientMessage << endl;
+                    }
+                    // socket.sendStringViaSocket(webSocketInstense.encodeFrame(clientMessage));
+                    // cout << "closing after sending string?" << endl;
+                }
+                //     cout << "-----------closing connection------------" << endl;
             }
         }
         else
         {
             routes.sendStaticFile(filePath, socket);
         }
-        // if (filePath.size() == 0)
-        // {
-        //     inFile.open("static/index.html");
-        // }
-        // // else if (filePath == "chat")
-        // // {
-
-        // //     WebSocket webSocket;
-        // //     if (webSocket.validWebSocketConnection())
-        // //     {
-        // //         cout << "open a websocket here!" << endl;
-
-        // //         string webSocketResponse = webSocket.sendHandShake();
-        // //         // sending http page
-        // //         sendStringViaSocket(socket, webSocketResponse);
-
-        // //         inFile.is_open();
-        // //         string successResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
-        // //         httpRes(inFile, successResponse, socket);
-        // //         sendStringViaSocket(socket, "webSocketResponse");
-        // //         testing = true;
-
-        // //         while (true)
-        // //         {
-        // //             string req = bufferToString(socket);
-        // //             // cout << req << endl;
-        // //             if (req != "")
-        // //             {
-        // //                 cout << req << endl;
-        // //             }
-        // //         }
-        // //     }
-        // // }
-        // else
-        // {
-        //     inFile.open("static/" + filePath + ".html");
-        // }
-
-        // if (inFile.is_open())
-        // {
-        //     string successResponse = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
-        //     httpRes(inFile, successResponse);
-        //     cout << "sending success?" << endl;
-        // }
-        // else
-        // {
-        //     inFile.open("static/404.html");
-        //     string Response404 = "HTTP/1.1 404 Not Found\nContent-Type: text/html\nContent-Length: ";
-        //     cout << "sending failed?" << endl;
-
-        //     httpRes(inFile, Response404);
-        // }
     }
 }
 // create websocket resposne
@@ -168,9 +130,11 @@ void checkHttpType(string position, Socket socket)
 void acceptConnection(Socket socket)
 {
 
+    printf("------------------waiting for new requset-------------------\n");
     string req = socket.bufferToString();
+    printf("------------------Recived Response-------------------\n");
     checkHttpType(req, socket);
 
-    printf("------------------HTTP responed has be sent-------------------\n");
+    printf("------------------HTTP responed has been sent-------------------\n");
     // close(socket);
 }

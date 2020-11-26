@@ -6,6 +6,7 @@
 #include <string.h>
 #include <string>
 #include <unistd.h>
+#include <bitset>
 
 #include "socket.h"
 
@@ -30,13 +31,17 @@ void Socket::sendStringViaSocket(string text)
 {
     char *cstr = new char[text.length() + 1];
     strcpy(cstr, text.c_str());
-    int test = strlen(cstr);
-    int byte = send(m_socket, cstr, test, 0);
+    int stringSize = strlen(cstr);
+    // for (int i = 0; i < text.length(); i++)
+    // {
+    //     auto t = bitset<8>(text[i]);
+    //     cout << t;
+    // }
+    int byte = write(m_socket, cstr, stringSize);
 }
 
 void Socket::Bind()
 {
-    cout << m_address.sin_family << endl;
     m_addrlen = sizeof(m_address);
 
     // choose protocol
@@ -47,11 +52,8 @@ void Socket::Bind()
     m_address.sin_port = htons(PORT);
 
     memset(m_address.sin_zero, '\0', sizeof m_address.sin_zero);
-    // cout << server_fd << " server fd" << endl;
     if (bind(server_fd, (struct sockaddr *)&m_address, sizeof(m_address)) < 0)
         throw runtime_error("bind failed");
-
-    // m_port = PORT;
 }
 
 void Socket::Accept()
@@ -62,7 +64,6 @@ void Socket::Accept()
         runtime_error("cannot accept on socket");
 
     m_socket = sock_accept;
-    cout << " the member socket in accept" << m_socket << endl;
 }
 
 void Socket::Listen()

@@ -110,9 +110,8 @@ dataFrame WebSocket::decodeFrame(string rawData)
         {
             data.mask_key[i] = rawData[i + 2];
         }
-
-        cout << '--------close connection------' << endl;
     }
+
     rawData.erase(0, byteCount);
     data.payload = move(rawData);
 
@@ -121,7 +120,6 @@ dataFrame WebSocket::decodeFrame(string rawData)
     {
         c = c ^ data.mask_key[i++ % 4];
     };
-    cout << data.payload << endl;
 
     return data;
 }
@@ -131,13 +129,16 @@ dataFrame WebSocket::decodeFrame(string rawData)
 string WebSocket::encodeFrame(string data)
 {
     string frameData;
-    // string dataSize = bitset<8>(data.size()).to_string();
+
+    // move to different function
+
     int dataSize = data.size() | 0b0000'0000;
+
+    //if(dataSize > 125)
 
     frameData = 0b1000'0001;
 
     frameData += dataSize;
-
     // adding the payload info to the string
     for (char &_char : data)
     {

@@ -34,7 +34,6 @@ string HttpResponses::httpRes(string res, string filePath)
     ifstream file;
     file.open(filePath);
     int size = file.tellg();
-    cout << filePath << endl;
     string content((istreambuf_iterator<char>(file)),
                    (istreambuf_iterator<char>()));
     int contentLengthInt = content.size();

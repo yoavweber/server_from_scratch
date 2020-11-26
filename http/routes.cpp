@@ -16,17 +16,18 @@ using namespace net;
 using namespace std;
 
 RoutesHandler::RoutesHandler()
-    : routes{{"yes", "static/path/yes.html"}, {"index", "static/index.html"}, {"chat", "static/path/chat.html"}, {"pdf", "static/path/Computing.pdf"}}
+    : routes{{"yes", "static/path/yes.html"}, {"index", "static/index.html"}, {"chat", "static/path/websocketClient.html"}, {"pdf", "static/path/Computing.pdf"}}
 {
 }
 
 void RoutesHandler::sendStaticFile(string filePath, Socket socket)
 {
     HttpResponses handleResponse;
+
+    // would make sense to change it to switch experssion
     if (filePath.size() == 0)
     {
         string route = routes["index"];
-        string test = handleResponse.successResponse(route);
         socket.sendStringViaSocket(handleResponse.successResponse(route));
     }
     else if (routes[filePath] == "")
@@ -36,10 +37,12 @@ void RoutesHandler::sendStaticFile(string filePath, Socket socket)
     else
     {
         string route = routes[filePath];
+
         socket.sendStringViaSocket(handleResponse.successResponse(route));
     }
 }
 
+// void RoutesHandler::sendSuc
 bool RoutesHandler::checkIfRouteExist(std::string string)
 {
     return false;
