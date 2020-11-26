@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -18,7 +17,7 @@
 #ifndef ThreadPool_H // include guard
 #define ThreadPool_H
 
-typedef void (*Connection)(int);
+using Connection = void (*)(int);
 
 class ThreadPool
 {
