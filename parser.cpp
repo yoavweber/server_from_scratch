@@ -33,37 +33,6 @@ string HttpParser::getPath()
     return filePath;
 }
 
-// std::string sendHandShake()
-// {
-//     std::string key = getWebsocketAcceptKey();
-//     std::cout << "sending websocket respond" << std::endl;
-//     // std::string response = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + key + "\r\nc\r\n";
-//     std::string response =
-//         "HTTP/1.1 101 Switching Protocols\r\n"
-//         "Upgrade: websocket\r\n"
-//         "Connection: Upgrade\r\n"
-//         "Sec-WebSocket-Accept: " +
-//         key + "\r\n"
-//               "\r\n";
-
-//     return response;
-// }
-// delete after websocket would be ready
-// bool validWebSocketConnection()
-// {
-//     // check http version
-//     // create a function that recive a string and give the index after the space
-//     std::string websocket = getReqLineValue("Upgrade: ");
-//     // std::string websocket = getReqLineValue("Upgrade: ");
-//     std::string upgrade = getReqLineValue("Connection: ");
-
-//     if (websocket == "websocket" && upgrade == "Upgrade")
-//     {
-//         return true;
-//     }
-//     return false;
-// }
-
 void HttpParser::splitToLines(std::string req)
 {
     // read about stringstream more https://www.geeksforgeeks.org/stringstream-c-applications/
