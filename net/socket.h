@@ -18,7 +18,6 @@ namespace net
         struct sockaddr_in m_address;
 
     public:
-        // explicit Socket(int socket, sockaddr_in address, int port) : m_socket(socket), m_address(address), m_port(port){};
         Socket();
         // change buffer to string to read
         std::string bufferToString();
@@ -30,13 +29,10 @@ namespace net
         //     // add the port number
 
         void Bind();
-
         void Listen();
         void Accept();
         void Close();
         void sendStringViaSocket(std::string text);
-        // private:
-        //     void Bind();
     };
 
 } // namespace net

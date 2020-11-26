@@ -54,6 +54,7 @@ bool WebSocket::validWebSocketConnection()
 string WebSocket::getHandShake()
 {
     string key = getWebsocketAcceptKey();
+    // the c in the end is important for some reason
     string response = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + key + "\r\nc\r\n";
     // std::string response =
     //     "HTTP/1.1 101 Switching Protocols\r\n"
@@ -111,7 +112,6 @@ dataFrame WebSocket::decodeFrame(string rawData)
             data.mask_key[i] = rawData[i + 2];
         }
     }
-
     rawData.erase(0, byteCount);
     data.payload = move(rawData);
 
