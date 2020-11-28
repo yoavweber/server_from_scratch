@@ -9,12 +9,14 @@
 #include <openssl/sha.h>
 #include "parser.h"
 #include "webSocket.h"
+#include "net/socket.h"
 
 #define WEBSOCKETHASH "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 using namespace parser;
 using namespace websocket;
 using namespace std;
+using namespace net;
 
 void WebSocket::handleWebSocketConnection(int socket)
 {
@@ -39,10 +41,10 @@ bool WebSocket::validWebSocketConnection()
     // check http version
     // create a function that recive a string and give the index after the space
     string websocket = getReqLineValue("Upgrade: ");
-    // std::string websocket = getReqLineValue("Upgrade: ");
     string upgrade = getReqLineValue("Connection: ");
 
-    if (websocket == "websocket" && upgrade == "Upgrade")
+    //TODO: change this after refactoring the parser
+    if (websocket == "websocket" && upgrade == "Upgrade" || upgrade == "keep-alive, Upgrade")
     {
         return true;
     }
@@ -64,6 +66,61 @@ string WebSocket::getHandShake()
     //           "\r\n";
 
     return response;
+}
+
+// TODO: decide of the maintainConnection function is going outside
+int WebSocket::handleHandShake(Socket socket)
+{
+    if (validWebSocketConnection())
+    {
+        cout << "the number of connections: " << socket.getConnectionNumber() << endl;
+
+        cout << "the websocket connection is valid" << endl;
+        string webSocketResponse = getHandShake();
+        socket.sendStringViaSocket(webSocketResponse);
+
+        // must send 200 after handshake, not sure why I need contet type(204 is not working)
+        string successResponse = "HTTP/1.1 200 OK\n\n";
+        socket.sendStringViaSocket(successResponse);
+        maintainConnection(socket);
+        return 0;
+    }
+    else
+    {
+
+        return -1;
+    }
+}
+
+void WebSocket::maintainConnection(Socket socket)
+{
+    if (socket.getConnectionNumber() > 3)
+    {
+        while (true)
+        {
+            string clientMessageCrypt = socket.bufferToString();
+            dataFrame clientFrame = decodeFrame(clientMessageCrypt);
+            if (clientFrame.opcode == 8)
+            {
+                cout << "closing connection" << endl;
+                socket.Close();
+                break;
+            }
+            string clientMessage = clientFrame.payload;
+            string test = encodeFrame(clientMessage);
+            socket.sendStringViaSockets(test);
+            if (clientMessage != "")
+            {
+
+                cout << "message payload: " << clientFrame.payload << endl;
+            }
+        }
+    }
+    else
+    {
+        string waitingMessage = encodeFrame("waiting for a second client");
+        socket.sendStringViaSocket(waitingMessage);
+    }
 }
 
 dataFrame WebSocket::decodeFrame(string rawData)

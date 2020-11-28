@@ -28,6 +28,11 @@ namespace net
         {
             return m_socket;
         }
+
+        int getConnectionNumber()
+        {
+            return socketsAccept.capacity();
+        }
         //     // add the port number
 
         void Bind();

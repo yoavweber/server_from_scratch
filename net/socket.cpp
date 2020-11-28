@@ -74,11 +74,8 @@ void Socket::Accept()
     if (sock_accept < 0)
         runtime_error("cannot accept on socket");
 
-    if (m_socket != 0)
-    {
-        socketsAccept.emplace_back(m_socket);
-    }
     m_socket = sock_accept;
+    socketsAccept.emplace_back(m_socket);
 }
 
 void Socket::Listen()
@@ -93,6 +90,8 @@ void Socket::Close()
 {
     if (m_socket != 0)
         close(m_socket);
+    socketsAccept.pop_back();
+    cout << "closing connection" << endl;
     m_socket = 0;
 }
 
