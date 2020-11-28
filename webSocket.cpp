@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string>
-#include "util.cpp"
 #include "base64.cpp"
 #include <bits/stdc++.h>
 #include <openssl/sha.h>

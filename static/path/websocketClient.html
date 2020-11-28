@@ -87,11 +87,11 @@
 // Create WebSocket connection.
 
 //window.onbeforeunload = function() { socket.close(); return; };
-let socket = new WebSocket('ws://localhost:8080/chat');
+let socket = new WebSocket('ws://localhost:8080/webSocket');
 
 // Connection opened
 socket.addEventListener('open', function (event) {
-    console.log('WebSocket Established: ');
+    console.log('WebSocket Established');
     socket.send('Hello Server!');
     alert('message sent')
 });

@@ -41,6 +41,7 @@ int main(int argc, char const *argv[])
     auto start = std::chrono::high_resolution_clock::now();
 
     Socket socket;
+    int new_socket = socket.getSocket();
     socket.Bind();
     socket.Listen();
     printf("\n+++++++ Waiting for new connection ++++++++\n\n");
@@ -49,8 +50,8 @@ int main(int argc, char const *argv[])
     {
         socket.Accept();
 
-        // // ThreadPool pool{Num_Threads - 1, new_socket};
-        // // pool.enqueuq(&acceptConnection);
+        // ThreadPool pool{Num_Threads - 1, new_socket};
+        // pool.enqueuq(&acceptConnection(socket));
         acceptConnection(socket);
         socket.Close();
     }
@@ -73,7 +74,7 @@ void checkHttpType(string req, Socket socket)
     if (httpMethod == "GET")
     {
         ifstream inFile;
-        if (filePath == "chat")
+        if (filePath == "webSocket")
         {
 
             WebSocket webSocketInstense{req};
@@ -89,20 +90,21 @@ void checkHttpType(string req, Socket socket)
                 string successResponse = "HTTP/1.1 200 OK\n\n";
                 socket.sendStringViaSocket(successResponse);
 
-                string clientMessage = socket.bufferToString();
+                // string clientMessage = socket.bufferToString();
+                // dataFrame test = webSocketInstense.decodeFrame(clientMessage);
 
-                webSocketInstense.decodeFrame(clientMessage);
-
-                socket.sendStringViaSocket(webSocketInstense.encodeFrame("hey"));
-
+                // // socket.sendStringViaSocket(webSocketInstense.encodeFrame("hey"));
+                // cout << test.payload << endl;
+                // socket.sendStringViaSocket(successResponse);
                 while (true)
                 {
                     string clientMessageCrypt = socket.bufferToString();
-                    string test = webSocketInstense.encodeFrame("test");
-                    socket.sendStringViaSocket(test);
+                    // string test = webSocketInstense.encodeFrame("test");
+                    // socket.sendStringViaSocket(test);
                     dataFrame clientFrame = webSocketInstense.decodeFrame(clientMessageCrypt);
                     if (clientFrame.opcode == 8)
                     {
+                        cout << "!!!" << endl;
                         socket.Close();
                         break;
                     }
@@ -110,7 +112,7 @@ void checkHttpType(string req, Socket socket)
                     if (clientMessage != "")
                     {
 
-                        cout << clientMessage << endl;
+                        cout << clientFrame.payload << "?" << endl;
                     }
                     // socket.sendStringViaSocket(webSocketInstense.encodeFrame(clientMessage));
                     // cout << "closing after sending string?" << endl;
