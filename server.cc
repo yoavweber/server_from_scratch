@@ -60,71 +60,76 @@ int main(int argc, char const *argv[])
     return 0;
 }
 
-void checkHttpType(string req, Socket socket)
-// return the string and handle sending the information outside of the socket
-{
+// void checkHttpType(string req, Socket socket)
+// // return the string and handle sending the information outside of the socket
+// {
 
-    HttpParser parser{req};
-    RoutesHandler routes;
+//     HttpParser parser{req};
+//     RoutesHandler routes;
 
-    cout << req << endl;
-    string httpMethod = parser.getHeader();
-    string filePath = parser.getPath();
-    counter += 1;
+//     cout << req << endl;
+//     string httpMethod = parser.getHeader();
+//     string filePath = parser.getPath();
 
-    if (httpMethod == "GET")
-    {
-        ifstream inFile;
-        if (filePath == "webSocket")
-        {
+//     if (httpMethod == "GET")
+//     {
+//         ifstream inFile;
+//         if (filePath == "webSocket")
+//         {
+//             counter += 1;
+//             WebSocket webSocketInstense{req};
 
-            WebSocket webSocketInstense{req};
+//             if (webSocketInstense.validWebSocketConnection())
+//             {
+//                 cout << "the number of connections: " << socket.getConnectionNumber() << endl;
 
-            if (webSocketInstense.validWebSocketConnection())
-            {
+//                 cout << "the websocket connection is valid" << endl;
+//                 string webSocketResponse = webSocketInstense.getHandShake();
+//                 socket.sendStringViaSocket(webSocketResponse);
 
-                cout << "the websocket connection is valid" << endl;
-                string webSocketResponse = webSocketInstense.getHandShake();
-                socket.sendStringViaSocket(webSocketResponse);
+//                 // must send 200 after handshake, not sure why I need contet type(204 is not working)
+//                 string successResponse = "HTTP/1.1 200 OK\n\n";
+//                 socket.sendStringViaSocket(successResponse);
 
-                // must send 200 after handshake, not sure why I need contet type(204 is not working)
-                string successResponse = "HTTP/1.1 200 OK\n\n";
-                socket.sendStringViaSocket(successResponse);
+//                 if (counter >= 2)
+//                 {
 
-                if (counter > 2)
-                {
+//                     while (true)
+//                     {
 
-                    while (true)
-                    {
+//                         string clientMessageCrypt = socket.bufferToString();
+//                         dataFrame clientFrame = webSocketInstense.decodeFrame(clientMessageCrypt);
+//                         if (clientFrame.opcode == 8)
+//                         {
+//                             cout << "closing connection" << endl;
+//                             socket.Close();
+//                             break;
+//                         }
+//                         string clientMessage = clientFrame.payload;
+//                         string test = webSocketInstense.encodeFrame(clientMessage);
+//                         socket.sendStringViaSockets(test);
+//                         if (clientMessage != "")
+//                         {
 
-                        string clientMessageCrypt = socket.bufferToString();
-
-                        dataFrame clientFrame = webSocketInstense.decodeFrame(clientMessageCrypt);
-                        if (clientFrame.opcode == 8)
-                        {
-                            cout << "closing connection" << endl;
-                            socket.Close();
-                            break;
-                        }
-                        string clientMessage = clientFrame.payload;
-                        string test = webSocketInstense.encodeFrame(clientMessage);
-                        socket.sendStringViaSockets(test);
-                        if (clientMessage != "")
-                        {
-
-                            cout << clientFrame.payload << " message payload" << endl;
-                        }
-                    }
-                }
-                //     cout << "-----------closing connection------------" << endl;
-            }
-        }
-        else
-        {
-            routes.sendStaticFile(filePath, socket);
-        }
-    }
-}
+//                             cout << clientFrame.payload << " message payload" << endl;
+//                         }
+//                     }
+//                 }
+//                 else
+//                 {
+//                     string waitingMessage = webSocketInstense.encodeFrame("waiting for a second client");
+//                     socket.sendStringViaSocket(waitingMessage);
+//                     cout << "counter number " << counter << endl;
+//                 }
+//                 //     cout << "-----------closing connection------------" << endl;
+//             }
+//         }
+//         else
+//         {
+//             routes.sendStaticFile(filePath, socket);
+//         }
+//     }
+// }
 // create websocket resposne
 
 // think where this should go
@@ -134,8 +139,10 @@ void acceptConnection(Socket socket)
     printf("------------------waiting for new requset-------------------\n");
     string req = socket.bufferToString();
     printf("------------------Recived Response-------------------\n");
-    checkHttpType(req, socket);
+    RoutesHandler routes;
+    routes.routeRequest(req, socket);
+    // checkHttpType(req, socket);
 
-    printf("------------------HTTP responed has been sent-------------------\n");
+    printf("------------------requset has been handled-------------------\n");
     // close(socket);
 }

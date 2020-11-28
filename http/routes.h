@@ -20,10 +20,10 @@ namespace route
     public:
         RoutesHandler();
         void sendStaticFile(std::string filePath, net::Socket socket);
+        void routeRequest(std::string req, net::Socket socket);
 
     private:
         bool checkIfRouteExist(std::string string);
-        void handleRequst(std::string req);
     };
 } // namespace route
 
