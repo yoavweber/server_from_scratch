@@ -11,7 +11,6 @@
 #include <regex>
 #include <iomanip>
 #include <thread>
-#include <vector>
 #include <queue>
 #include <condition_variable>
 #include "Threadpool.h"
@@ -20,6 +19,7 @@
 #include "./http/routes.h"
 #include "webSocket.h"
 #include <bitset>
+#include <unistd.h>
 
 using namespace std;
 using namespace net;
@@ -33,27 +33,27 @@ void acceptConnection(Socket socket);
 
 int Num_Threads = thread::hardware_concurrency();
 
-// move it to the main scope and intilize it with a constructor
-
+//change this when refactoring
+int counter;
 int main(int argc, char const *argv[])
 {
     //not sure why it is there
     auto start = std::chrono::high_resolution_clock::now();
 
     Socket socket;
-    int new_socket = socket.getSocket();
     socket.Bind();
     socket.Listen();
     printf("\n+++++++ Waiting for new connection ++++++++\n\n");
 
     while (true)
     {
-        socket.Accept();
 
+        socket.Accept();
         // ThreadPool pool{Num_Threads - 1, new_socket};
         // pool.enqueuq(&acceptConnection(socket));
         acceptConnection(socket);
-        socket.Close();
+
+        // socket.Close();
     }
     printf("------------------Closing connection-------------------\n");
 
@@ -70,6 +70,7 @@ void checkHttpType(string req, Socket socket)
     cout << req << endl;
     string httpMethod = parser.getHeader();
     string filePath = parser.getPath();
+    counter += 1;
 
     if (httpMethod == "GET")
     {
@@ -90,32 +91,30 @@ void checkHttpType(string req, Socket socket)
                 string successResponse = "HTTP/1.1 200 OK\n\n";
                 socket.sendStringViaSocket(successResponse);
 
-                // string clientMessage = socket.bufferToString();
-                // dataFrame test = webSocketInstense.decodeFrame(clientMessage);
-
-                // // socket.sendStringViaSocket(webSocketInstense.encodeFrame("hey"));
-                // cout << test.payload << endl;
-                // socket.sendStringViaSocket(successResponse);
-                while (true)
+                if (counter > 2)
                 {
-                    string clientMessageCrypt = socket.bufferToString();
-                    // string test = webSocketInstense.encodeFrame("test");
-                    // socket.sendStringViaSocket(test);
-                    dataFrame clientFrame = webSocketInstense.decodeFrame(clientMessageCrypt);
-                    if (clientFrame.opcode == 8)
-                    {
-                        cout << "!!!" << endl;
-                        socket.Close();
-                        break;
-                    }
-                    string clientMessage = clientFrame.payload;
-                    if (clientMessage != "")
+
+                    while (true)
                     {
 
-                        cout << clientFrame.payload << "?" << endl;
+                        string clientMessageCrypt = socket.bufferToString();
+
+                        dataFrame clientFrame = webSocketInstense.decodeFrame(clientMessageCrypt);
+                        if (clientFrame.opcode == 8)
+                        {
+                            cout << "closing connection" << endl;
+                            socket.Close();
+                            break;
+                        }
+                        string clientMessage = clientFrame.payload;
+                        string test = webSocketInstense.encodeFrame(clientMessage);
+                        socket.sendStringViaSockets(test);
+                        if (clientMessage != "")
+                        {
+
+                            cout << clientFrame.payload << " message payload" << endl;
+                        }
                     }
-                    // socket.sendStringViaSocket(webSocketInstense.encodeFrame(clientMessage));
-                    // cout << "closing after sending string?" << endl;
                 }
                 //     cout << "-----------closing connection------------" << endl;
             }

@@ -7,6 +7,7 @@
 #include <string>
 #include <unistd.h>
 #include <bitset>
+#include <vector>
 
 #include "socket.h"
 
@@ -17,11 +18,7 @@ using namespace net;
 
 Socket::Socket()
 {
-    // if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
-    // {
-    //     perror("In socket");
-    //     exit(EXIT_FAILURE);
-    // }
+
     server_fd = (int)(socket(AF_INET, SOCK_STREAM, 0));
     if (server_fd == 0)
         throw runtime_error("cannot create socket");
@@ -32,12 +29,26 @@ void Socket::sendStringViaSocket(string text)
     char *cstr = new char[text.length() + 1];
     strcpy(cstr, text.c_str());
     int stringSize = strlen(cstr);
-    // for (int i = 0; i < text.length(); i++)
-    // {
-    //     auto t = bitset<8>(text[i]);
-    //     cout << t;
-    // }
+    // cout << m_socket << " becfore sending the socket" << endl;
     int byte = write(m_socket, cstr, stringSize);
+    if (byte == -1)
+    {
+        //TODO: add it to the log
+        cout << "sending failed" << endl;
+    }
+}
+
+void Socket::sendStringViaSockets(string text)
+{
+
+    char *cstr = new char[text.length() + 1];
+    strcpy(cstr, text.c_str());
+    int stringSize = strlen(cstr);
+    cout << socketsAccept[0] << endl;
+    for (auto &socket : socketsAccept)
+    {
+        int byte = write(socket, cstr, stringSize);
+    };
 }
 
 void Socket::Bind()
@@ -63,6 +74,10 @@ void Socket::Accept()
     if (sock_accept < 0)
         runtime_error("cannot accept on socket");
 
+    if (m_socket != 0)
+    {
+        socketsAccept.emplace_back(m_socket);
+    }
     m_socket = sock_accept;
 }
 

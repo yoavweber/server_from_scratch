@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <string.h>
 #include <string>
+#include <vector>
 
 #ifndef SOCKET_H // include guard
 #define SOCKET_H
@@ -14,6 +15,7 @@ namespace net
     class Socket
     {
         int server_fd, m_socket, m_addrlen;
+        std::vector<int> socketsAccept;
         //int m_port;
         struct sockaddr_in m_address;
 
@@ -33,6 +35,7 @@ namespace net
         void Accept();
         void Close();
         void sendStringViaSocket(std::string text);
+        void sendStringViaSockets(std::string text);
     };
 
 } // namespace net
