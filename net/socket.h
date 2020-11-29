@@ -15,7 +15,7 @@ namespace net
     class Socket
     {
         int server_fd, m_socket, m_addrlen;
-        std::vector<int> socketsAccept;
+        std::vector<int> acceptedSocketVecotr;
         //int m_port;
         struct sockaddr_in m_address;
 
@@ -28,10 +28,20 @@ namespace net
         {
             return m_socket;
         }
+        // delete this
+        std::vector<int> getVector()
+        {
+            return acceptedSocketVecotr;
+        }
+        // delete this
+        int getserver_fd()
+        {
+            return server_fd;
+        }
 
         int getConnectionNumber()
         {
-            return socketsAccept.capacity();
+            return acceptedSocketVecotr.capacity();
         }
         //     // add the port number
 
@@ -41,6 +51,7 @@ namespace net
         void Close();
         void sendStringViaSocket(std::string text);
         void sendStringViaSockets(std::string text);
+        void maintainConnection();
     };
 
 } // namespace net
