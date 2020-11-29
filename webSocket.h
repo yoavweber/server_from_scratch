@@ -42,6 +42,8 @@ namespace websocket
         // move it into private
         bool validWebSocketConnection();
         void maintainConnection(net::Socket socket);
+        bool handleWebsocketMessage(std::string req, net::Socket socket);
+        // static std::string handleWebsocketMessage(std::string req);
 
         std::string getHandShake();
 

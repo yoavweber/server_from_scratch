@@ -10,6 +10,7 @@
 #include "parser.h"
 #include "webSocket.h"
 #include "net/socket.h"
+#include <poll.h>
 
 #define WEBSOCKETHASH "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -28,10 +29,6 @@ void WebSocket::handleWebSocketConnection(int socket)
     string req = buffer;
 
     bool isValid = validWebSocketConnection();
-    // if (isValid)
-    // {
-    //     // open connection
-    // }
 
     //close(socket);
 }
@@ -96,24 +93,124 @@ void WebSocket::maintainConnection(Socket socket)
 {
     if (socket.getConnectionNumber() > 3)
     {
+        cout << "------------- entering while -----------" << endl;
+
+        // looping over the sockets
+        //creating the select set
+        fd_set master;
+        // clearing the select set
+        FD_ZERO(&master);
+
+        vector<int> acceptedSocketVector = socket.getVector();
+
+        // vector<int> acceptedSocketVector;
+        // acceptedSocketVector.push_back(8);
+        // acceptedSocketVector.push_back(10);
+        int vectorSize = acceptedSocketVector.capacity();
+
+        struct pollfd pfds[vectorSize];
+
+        // Add our first socket that we're interested in interacting with; the listening socket!
+        // It's important that this socket is added for our server or else we won't 'hear' incoming
+        // connections
+        for (int i = 0; i < vectorSize; i++)
+        {
+            FD_SET(acceptedSocketVector[i], &master);
+            pfds[i].fd = acceptedSocketVector[i];
+            pfds[i].events = POLLOUT;
+        }
+
         while (true)
         {
-            string clientMessageCrypt = socket.bufferToString();
-            dataFrame clientFrame = decodeFrame(clientMessageCrypt);
-            if (clientFrame.opcode == 8)
-            {
-                cout << "closing connection" << endl;
-                socket.Close();
-                break;
-            }
-            string clientMessage = clientFrame.payload;
-            string test = encodeFrame(clientMessage);
-            socket.sendStringViaSockets(test);
-            if (clientMessage != "")
-            {
+            // everytime we call select we are destroying the set. therefor we are creating a copy of it
+            fd_set read_fds = master;
+            fd_set write_fds = master;
+            // creating a list with all of the connected sockets
+            int socketCount = select(11, &read_fds, &write_fds, nullptr, nullptr);
+            // int socketCount = select(FD_SETSIZE, &read_fds, nullptr, nullptr, nullptr);
 
-                cout << "message payload: " << clientFrame.payload << endl;
+            int test = socket.getSocket();
+            string t;
+            // int num_events = poll(pfds, vectorSize, -1);
+            for (int i = 0; i < vectorSize; i++)
+            {
+                int acceptSocket = acceptedSocketVector[i];
+                if ((FD_ISSET(acceptSocket, &read_fds) != 0))
+                {
+
+                    string clientMessageCrypt = socket.bufferToString(acceptSocket);
+                    cout << "recived message from socket: " << acceptSocket << endl;
+                    dataFrame clientFrame = decodeFrame(clientMessageCrypt);
+                    if (clientFrame.opcode == 8)
+                    {
+                        cout << "closing connection" << endl;
+                        socket.Close();
+                        break;
+                    }
+                    string clientMessage = clientFrame.payload;
+
+                    t = encodeFrame(clientMessage);
+
+                    // for (int i = 0; i < vectorSize; i++)
+                    // {
+                    //     int outSock = acceptedSocketVector[i];
+                    //     if (outSock != acceptSocket)
+                    //     {
+                    //         cout << outSock << endl;
+                    //         socket.sendStringViaSocket(t, 8);
+                    //     }
+                    // }
+
+                    for (int i = 0; i < vectorSize; i++)
+                    {
+                        int outSock = acceptedSocketVector[i];
+                        if ((FD_ISSET(outSock, &write_fds) != 0) && outSock != acceptSocket)
+                        {
+                            cout << "the socket that would get the message: " << outSock << endl;
+                            socket.sendStringViaSocket(t, outSock);
+                        }
+                    }
+
+                    // // printf("Write FD: %d\n", FD_ISSET(acceptSocket, &write_fds));
+
+                    //---------------------trying to go with polling -----------
+                    // for (int j = 0; j < vectorSize; j++)
+                    // {
+                    //     int sendSocket = acceptedSocketVector[j];
+                    //     if (pfds[j].revents & POLLOUT && pfds[j].fd != acceptSocket)
+                    //     {
+                    //         socket.sendStringViaSocket(t, sendSocket);
+                    //     }
+                    //     else
+                    //     {
+                    //         cout << "damn..." << pfds[j].fd << endl;
+                    //     }
+                    // }
+                    if (clientMessage != "")
+                    {
+
+                        cout << "message payload: " << clientFrame.payload << endl;
+                    }
+                }
             }
+            // socket.sendStringViaSockets(t);
+            // socket.maintainConnection();
+            // string clientMessageCrypt = socket.bufferToString();
+            // dataFrame clientFrame = decodeFrame(clientMessageCrypt);
+            // if (clientFrame.opcode == 8)
+            // {
+            //     cout << "closing connection" << endl;
+            //     socket.Close();
+            //     break;
+            // }
+            // string clientMessage = clientFrame.payload;
+            // string test = encodeFrame(clientMessage);
+            // socket.sendStringViaSockets(test);
+            // if (clientMessage != "")
+            // {
+
+            //     cout << "message payload: " << clientFrame.payload << endl;
+            // }
         }
     }
     else
@@ -121,6 +218,42 @@ void WebSocket::maintainConnection(Socket socket)
         string waitingMessage = encodeFrame("waiting for a second client");
         socket.sendStringViaSocket(waitingMessage);
     }
+}
+
+// string WebSocket::handleWebsocketMessage(string req)
+// {
+//     dataFrame clientFrame = decodeFrame(req);
+//     if (clientFrame.opcode == 8)
+//     {
+//         cout << "closing connection" << endl;
+//         return "close";
+//     }
+//     string clientMessage = clientFrame.payload;
+//     string test = encodeFrame(clientMessage);
+//     if (clientMessage != "")
+//     {
+//         cout << "message payload: " << clientFrame.payload << endl;
+//     }
+//     return test;
+// }
+
+bool WebSocket::handleWebsocketMessage(string req, Socket socket)
+{
+    dataFrame clientFrame = decodeFrame(req);
+    if (clientFrame.opcode == 8)
+    {
+        cout << "closing connection" << endl;
+        socket.Close();
+        return false;
+    }
+    string clientMessage = clientFrame.payload;
+    string test = encodeFrame(clientMessage);
+    socket.sendStringViaSockets(test);
+    if (clientMessage != "")
+    {
+        cout << "message payload: " << clientFrame.payload << endl;
+    }
+    return true;
 }
 
 dataFrame WebSocket::decodeFrame(string rawData)
