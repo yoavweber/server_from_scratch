@@ -2,15 +2,6 @@
 #include <iostream>
 #include <string.h>
 #include <string>
-// #include <sstream>
-// #include <stdlib.h>
-// #include <vector>
-// #include <iterator>
-// #include <regex>
-// #include <bits/stdc++.h>
-// #include <openssl/sha.h>
-// #include <bitset>
-// #include "base64.cpp"
 
 #ifndef HttpParser_H // include guard
 #define HttpParser_H
