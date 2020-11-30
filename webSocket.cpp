@@ -11,6 +11,7 @@
 #include "webSocket.h"
 #include "net/socket.h"
 #include <poll.h>
+#include <vector>
 
 #define WEBSOCKETHASH "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -79,6 +80,8 @@ int WebSocket::handleHandShake(Socket socket)
         // must send 200 after handshake, not sure why I need contet type(204 is not working)
         string successResponse = "HTTP/1.1 200 OK\n\n";
         socket.sendStringViaSocket(successResponse);
+        int webSocket = socket.getSocket();
+        addSocketToVector(webSocket);
         maintainConnection(socket);
         return 0;
     }
@@ -101,13 +104,14 @@ void WebSocket::maintainConnection(Socket socket)
         // clearing the select set
         FD_ZERO(&master);
 
-        vector<int> acceptedSocketVector = socket.getVector();
+        // vector<int> acceptedSocketVector = socket.getWebsocketVector();
 
-        // vector<int> acceptedSocketVector;
+        vector<int> acceptedSocketVector = webSockets;
         // acceptedSocketVector.push_back(8);
         // acceptedSocketVector.push_back(10);
-        int vectorSize = acceptedSocketVector.capacity();
 
+        int vectorSize = acceptedSocketVector.capacity();
+        cout << vectorSize << " vector size" << endl;
         struct pollfd pfds[vectorSize];
 
         // Add our first socket that we're interested in interacting with; the listening socket!
@@ -115,6 +119,7 @@ void WebSocket::maintainConnection(Socket socket)
         // connections
         for (int i = 0; i < vectorSize; i++)
         {
+            cout << "the number of vectors: " << acceptedSocketVector[i] << endl;
             FD_SET(acceptedSocketVector[i], &master);
             pfds[i].fd = acceptedSocketVector[i];
             pfds[i].events = POLLOUT;
@@ -139,7 +144,7 @@ void WebSocket::maintainConnection(Socket socket)
                 {
 
                     string clientMessageCrypt = socket.bufferToString(acceptSocket);
-                    cout << "recived message from socket: " << acceptSocket << endl;
+                    // cout << "recived message from socket: " << acceptSocket << endl;
                     dataFrame clientFrame = decodeFrame(clientMessageCrypt);
                     if (clientFrame.opcode == 8)
                     {
@@ -166,12 +171,9 @@ void WebSocket::maintainConnection(Socket socket)
                         int outSock = acceptedSocketVector[i];
                         if ((FD_ISSET(outSock, &write_fds) != 0) && outSock != acceptSocket)
                         {
-                            cout << "the socket that would get the message: " << outSock << endl;
                             socket.sendStringViaSocket(t, outSock);
                         }
                     }
-
-                    // // printf("Write FD: %d\n", FD_ISSET(acceptSocket, &write_fds));
 
                     //---------------------trying to go with polling -----------
                     // for (int j = 0; j < vectorSize; j++)
@@ -193,24 +195,6 @@ void WebSocket::maintainConnection(Socket socket)
                     }
                 }
             }
-            // socket.sendStringViaSockets(t);
-            // socket.maintainConnection();
-            // string clientMessageCrypt = socket.bufferToString();
-            // dataFrame clientFrame = decodeFrame(clientMessageCrypt);
-            // if (clientFrame.opcode == 8)
-            // {
-            //     cout << "closing connection" << endl;
-            //     socket.Close();
-            //     break;
-            // }
-            // string clientMessage = clientFrame.payload;
-            // string test = encodeFrame(clientMessage);
-            // socket.sendStringViaSockets(test);
-            // if (clientMessage != "")
-            // {
-
-            //     cout << "message payload: " << clientFrame.payload << endl;
-            // }
         }
     }
     else

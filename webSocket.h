@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 #include "net/socket.h"
 
 #ifndef WEBSOCKET_H // include guard
@@ -27,6 +28,8 @@ namespace websocket
 {
     class WebSocket : public parser::HttpParser
     {
+        inline static std::vector<int> webSockets;
+
     public:
         WebSocket(std::string req) : parser::HttpParser(req)
         {
@@ -43,9 +46,13 @@ namespace websocket
         bool validWebSocketConnection();
         void maintainConnection(net::Socket socket);
         bool handleWebsocketMessage(std::string req, net::Socket socket);
-        // static std::string handleWebsocketMessage(std::string req);
 
         std::string getHandShake();
+
+        void addSocketToVector(int value)
+        {
+            webSockets.push_back(value);
+        }
 
     private:
         std::string req;
