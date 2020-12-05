@@ -1,8 +1,0 @@
-./draft
-parser.o
-responses.o
-routes.o
-server.0
-socket.o
-webSocket.o
-output
