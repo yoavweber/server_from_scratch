@@ -10,14 +10,7 @@ PORT = 8080        # The port used by the server
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
     s.connect((HOST, PORT))
-    s.sendall(b'''
-GET /chat HTTP/1.1
-Host: localhost:8080
-Upgrade: websocket
-Connection: Upgrade
-Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==
-Sec-WebSocket-Version: 13
-    ''')
+    s.sendall(b'Hello, world')
     data = s.recv(1024)
 
 finish =  time.time()
