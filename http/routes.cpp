@@ -11,7 +11,7 @@
 #include "routes.h"
 #include "responses.h"
 #include "parser.h"
-#include "../webSocket.h"
+#include "../net/webSocket.h"
 
 using namespace route;
 using namespace http;
@@ -37,6 +37,7 @@ void RoutesHandler::routeRequest(string req, Socket socket)
         if (filePath == "webSocket")
         {
             websocket::WebSocket webSocketInstense{req};
+            cout << "-----------------------" << endl;
             if (webSocketInstense.handleHandShake(socket) == -1)
             {
                 //TODO:add this to the log

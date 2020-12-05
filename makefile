@@ -15,11 +15,11 @@ routes.o: http/routes.cpp http/routes.h
 responses.o: http/responses.cpp http/responses.h
 	g++ -c http/responses.cpp
 
-parser.o: parser.cpp parser.h
-	g++ -c parser.cpp
+parser.o: http/parser.cpp http/parser.h
+	g++ -c http/parser.cpp
 
-webSocket.o: webSocket.cpp webSocket.h
-	g++ -c webSocket.cpp 
+webSocket.o: net/webSocket.cpp net/webSocket.h
+	g++ -c net/webSocket.cpp 
 
 
 clean:

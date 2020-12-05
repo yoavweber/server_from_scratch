@@ -49,6 +49,8 @@
 .time-left {
   float: left;
   color: #999;
+  width: 100px;
+  height: 100px;
 }
     </style>
 </head>
@@ -79,7 +81,7 @@
       <!-- <button onclick="startConnection">test</button> -->
   
     <input type="text" id="fname" name="fname">
-    <button onclick="sendMessage()">button</button>
+    <button onclick="sendMessage()">Send Message</button>
     <!-- <p>{{message}}</p> -->
 
 </body>
@@ -92,7 +94,6 @@ let socket = new WebSocket('ws://localhost:8080/webSocket');
 // Connection opened
 socket.addEventListener('open', function (event) {
     console.log('WebSocket Established');
-    alert('message sent')
 });
 
 
@@ -100,10 +101,11 @@ const sendMessage = () => {
     const value = document.getElementById("fname").value
     socket.send(value)
     userText(value)
+    console.log(value)
     if(value == "close") {
 
-    socket.close()
-    alert("connection closed")
+      socket.close()
+      alert("connection closed")
     }
     console.log(value, 'message has been sent')
 }
@@ -129,10 +131,18 @@ const createInput = (input) => {
     div.appendChild(par)
     par.appendChild(document.createTextNode(input))
     document.body.appendChild(div)
-    // let span = document.createElement('span')
-    // div.appendChild(span)
+    let span = document.createElement('span')
+    let name = document.createElement('span')
+    name.innerHTML = "Not Me"
+    let date = new Date()
+    let time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+    span.innerHTML= time
+    div.appendChild(span)
+    div.appendChild(name)
     // span.createTextNode(`${new date()}`)
-    // span.classList.add('time-left')
+    span.classList.add('time-left')
+    name.classList.add('time-right')
+
 
 }
 
@@ -144,10 +154,17 @@ const userText = (input) => {
     div.appendChild(par)
     par.appendChild(document.createTextNode(input))
     document.body.appendChild(div)
-    // let span = document.createElement('span')
-    // div.appendChild(span)
-    // span.createTextNode(`${new date()}`)
-    // span.classList.add('time-left')
+    let span = document.createElement('span')
+    let date = new Date()
+    let time = date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
+    let name = document.createElement('span')
+    name.innerHTML = "Me"
+    span.innerHTML= time
+    div.appendChild(span)
+    div.appendChild(name)
+    span.classList.add('time-right')
+    name.classList.add('time-left')
+
 
 };
 
