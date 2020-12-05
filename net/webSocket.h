@@ -5,17 +5,15 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
-#include "net/socket.h"
+#include "socket.h"
+#include "../http/parser.h"
 
 #ifndef WEBSOCKET_H // include guard
 #define WEBSOCKET_H
 
-#include "parser.h"
-
 struct dataFrame
 {
     bool fin = true;
-    // using
     uint8_t mask_key[4] = {};
     bool mask = false;
     uint8_t opcode = 0x1;
@@ -48,6 +46,8 @@ namespace websocket
         bool handleWebsocketMessage(std::string req, net::Socket socket);
 
         std::string getHandShake();
+
+        // void sendPong(std::string);
 
         void addSocketToVector(int value)
         {

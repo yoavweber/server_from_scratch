@@ -1,21 +1,20 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <poll.h>
+#include <vector>
 #include <unistd.h>
 #include <stdlib.h>
 #include <string>
-#include "base64.cpp"
-#include <bits/stdc++.h>
 #include <openssl/sha.h>
-#include "parser.h"
+#include <bits/stdc++.h>
 #include "webSocket.h"
-#include "net/socket.h"
-#include <poll.h>
-#include <vector>
+#include "socket.h"
+#include "../utils/base64.cpp"
 
 #define WEBSOCKETHASH "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
-using namespace parser;
+// using namespace parser;
 using namespace websocket;
 using namespace std;
 using namespace net;
@@ -23,7 +22,6 @@ using namespace net;
 void WebSocket::handleWebSocketConnection(int socket)
 {
     long valread;
-    //// not why I assign this number
     char buffer[30000] = {0};
 
     valread = read(socket, buffer, 30000);
@@ -55,13 +53,6 @@ string WebSocket::getHandShake()
     string key = getWebsocketAcceptKey();
     // the c in the end is important for some reason
     string response = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: " + key + "\r\nc\r\n";
-    // std::string response =
-    //     "HTTP/1.1 101 Switching Protocols\r\n"
-    //     "Upgrade: websocket\r\n"
-    //     "Connection: Upgrade\r\n"
-    //     "Sec-WebSocket-Accept: " +
-    //     key + "\r\n"
-    //           "\r\n";
 
     return response;
 }
@@ -71,7 +62,6 @@ int WebSocket::handleHandShake(Socket socket)
 {
     if (validWebSocketConnection())
     {
-        cout << "the number of connections: " << socket.getConnectionNumber() << endl;
 
         cout << "the websocket connection is valid" << endl;
         string webSocketResponse = getHandShake();
@@ -94,38 +84,40 @@ int WebSocket::handleHandShake(Socket socket)
 
 void WebSocket::maintainConnection(Socket socket)
 {
-    if (socket.getConnectionNumber() > 3)
+    vector<int> acceptedSocketVector = webSockets;
+
+    int vectorSize = acceptedSocketVector.capacity();
+    if (vectorSize > 1)
     {
         cout << "------------- entering while -----------" << endl;
 
-        // looping over the sockets
+        string notifyFirstClient = encodeFrame("Another user has been connected, you can start the chat");
+        socket.sendStringViaSocket(notifyFirstClient, acceptedSocketVector[0]);
+
+        string incomingClient = encodeFrame("your friend is here, you can start chatting!");
+        socket.sendStringViaSocket(notifyFirstClient, acceptedSocketVector[0]);
+
         //creating the select set
         fd_set master;
         // clearing the select set
         FD_ZERO(&master);
 
-        // vector<int> acceptedSocketVector = socket.getWebsocketVector();
-
-        vector<int> acceptedSocketVector = webSockets;
-        // acceptedSocketVector.push_back(8);
-        // acceptedSocketVector.push_back(10);
-
-        int vectorSize = acceptedSocketVector.capacity();
-        cout << vectorSize << " vector size" << endl;
-        struct pollfd pfds[vectorSize];
+        // struct pollfd pfds[vectorSize];
 
         // Add our first socket that we're interested in interacting with; the listening socket!
         // It's important that this socket is added for our server or else we won't 'hear' incoming
         // connections
         for (int i = 0; i < vectorSize; i++)
         {
-            cout << "the number of vectors: " << acceptedSocketVector[i] << endl;
             FD_SET(acceptedSocketVector[i], &master);
-            pfds[i].fd = acceptedSocketVector[i];
-            pfds[i].events = POLLOUT;
+
+            // pfds[i].fd = acceptedSocketVector[i];
+            // pfds[i].events = POLLOUT;
         }
 
-        while (true)
+        bool keepLoop = true;
+
+        while (keepLoop)
         {
             // everytime we call select we are destroying the set. therefor we are creating a copy of it
             fd_set read_fds = master;
@@ -134,8 +126,8 @@ void WebSocket::maintainConnection(Socket socket)
             int socketCount = select(11, &read_fds, &write_fds, nullptr, nullptr);
             // int socketCount = select(FD_SETSIZE, &read_fds, nullptr, nullptr, nullptr);
 
-            int test = socket.getSocket();
-            string t;
+            string encodedClientMessage;
+
             // int num_events = poll(pfds, vectorSize, -1);
             for (int i = 0; i < vectorSize; i++)
             {
@@ -144,34 +136,24 @@ void WebSocket::maintainConnection(Socket socket)
                 {
 
                     string clientMessageCrypt = socket.bufferToString(acceptSocket);
-                    // cout << "recived message from socket: " << acceptSocket << endl;
                     dataFrame clientFrame = decodeFrame(clientMessageCrypt);
                     if (clientFrame.opcode == 8)
                     {
                         cout << "closing connection" << endl;
                         socket.Close();
+                        keepLoop = false;
                         break;
                     }
                     string clientMessage = clientFrame.payload;
 
-                    t = encodeFrame(clientMessage);
-
-                    // for (int i = 0; i < vectorSize; i++)
-                    // {
-                    //     int outSock = acceptedSocketVector[i];
-                    //     if (outSock != acceptSocket)
-                    //     {
-                    //         cout << outSock << endl;
-                    //         socket.sendStringViaSocket(t, 8);
-                    //     }
-                    // }
+                    encodedClientMessage = encodeFrame(clientMessage);
 
                     for (int i = 0; i < vectorSize; i++)
                     {
                         int outSock = acceptedSocketVector[i];
                         if ((FD_ISSET(outSock, &write_fds) != 0) && outSock != acceptSocket)
                         {
-                            socket.sendStringViaSocket(t, outSock);
+                            socket.sendStringViaSocket(encodedClientMessage, outSock);
                         }
                     }
 
@@ -199,44 +181,37 @@ void WebSocket::maintainConnection(Socket socket)
     }
     else
     {
-        string waitingMessage = encodeFrame("waiting for a second client");
-        socket.sendStringViaSocket(waitingMessage);
+        string waitingMessage = encodeFrame("waiting for another client");
+
+        //created this just to show that ping works
+        string ping = encodeFrame("ping");
+        socket.sendStringViaSocket("ping");
+        string pingResponse = socket.bufferToString();
+        cout << pingResponse << endl;
     }
 }
-
-// string WebSocket::handleWebsocketMessage(string req)
-// {
-//     dataFrame clientFrame = decodeFrame(req);
-//     if (clientFrame.opcode == 8)
-//     {
-//         cout << "closing connection" << endl;
-//         return "close";
-//     }
-//     string clientMessage = clientFrame.payload;
-//     string test = encodeFrame(clientMessage);
-//     if (clientMessage != "")
-//     {
-//         cout << "message payload: " << clientFrame.payload << endl;
-//     }
-//     return test;
-// }
 
 bool WebSocket::handleWebsocketMessage(string req, Socket socket)
 {
     dataFrame clientFrame = decodeFrame(req);
+    string clientMessage = clientFrame.payload;
     if (clientFrame.opcode == 8)
     {
         cout << "closing connection" << endl;
         socket.Close();
         return false;
     }
-    string clientMessage = clientFrame.payload;
-    string test = encodeFrame(clientMessage);
-    socket.sendStringViaSockets(test);
-    if (clientMessage != "")
+    else
     {
-        cout << "message payload: " << clientFrame.payload << endl;
+
+        string encodeMessage = encodeFrame(clientMessage);
+        socket.sendStringViaSockets(encodeMessage);
+        if (clientMessage != "")
+        {
+            cout << "message payload: " << clientFrame.payload << endl;
+        }
     }
+
     return true;
 }
 
@@ -306,10 +281,12 @@ string WebSocket::encodeFrame(string data)
     // move to different function
 
     int dataSize = data.size() | 0b0000'0000;
-
-    //if(dataSize > 125)
-
     frameData = 0b1000'0001;
+
+    if (data == "ping")
+    {
+        frameData = 0b1000'1001;
+    }
 
     frameData += dataSize;
     // adding the payload info to the string
@@ -317,12 +294,6 @@ string WebSocket::encodeFrame(string data)
     {
         frameData += _char | 0b0000'0000;
     }
-
-    // for (int i = 0; i < frameData.length(); i++)
-    // {
-    //     auto t = bitset<8>(frameData[i]);
-    //     cout << t << endl;
-    // }
 
     return frameData;
 }
@@ -338,7 +309,6 @@ string WebSocket::getWebsocketAcceptKey()
 }
 
 string WebSocket::sha1(const string &input)
-// string WebSocket::sha1(const string &input, size_t iterations = 1)
 {
     string hash;
 
