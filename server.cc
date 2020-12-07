@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <string>
-#include <iostream>
-#include <fstream>
-#include <iomanip>
 
 #include "net/Threadpool.h"
 #include "net/socket.h"
@@ -20,7 +17,6 @@ void acceptConnection(Socket socket);
 
 int Num_Threads = thread::hardware_concurrency();
 
-//change this when refactoring
 int main(int argc, char const *argv[])
 {
 

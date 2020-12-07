@@ -95,7 +95,7 @@ void WebSocket::maintainConnection(Socket socket)
         socket.sendStringViaSocket(notifyFirstClient, acceptedSocketVector[0]);
 
         string incomingClient = encodeFrame("your friend is here, you can start chatting!");
-        socket.sendStringViaSocket(notifyFirstClient, acceptedSocketVector[0]);
+        socket.sendStringViaSocket(notifyFirstClient, acceptedSocketVector[1]);
 
         //creating the select set
         fd_set master;
@@ -124,7 +124,6 @@ void WebSocket::maintainConnection(Socket socket)
             fd_set write_fds = master;
             // creating a list with all of the connected sockets
             int socketCount = select(11, &read_fds, &write_fds, nullptr, nullptr);
-            // int socketCount = select(FD_SETSIZE, &read_fds, nullptr, nullptr, nullptr);
 
             string encodedClientMessage;
 
@@ -183,11 +182,12 @@ void WebSocket::maintainConnection(Socket socket)
     {
         string waitingMessage = encodeFrame("waiting for another client");
 
-        //created this just to show that ping works
+        // created this just to show that ping works
         string ping = encodeFrame("ping");
-        socket.sendStringViaSocket("ping");
+        socket.sendStringViaSocket(ping);
         string pingResponse = socket.bufferToString();
-        cout << pingResponse << endl;
+        cout << decodeFrame(pingResponse).payload << endl;
+        socket.sendStringViaSocket(waitingMessage);
     }
 }
 
@@ -272,8 +272,8 @@ dataFrame WebSocket::decodeFrame(string rawData)
     return data;
 }
 
-//currently sends only one message(fin is true)
-//currently the payload would always be 1
+//INFO:currently sends only one message(fin is true)
+//INFO:currently the payload would always be 1
 string WebSocket::encodeFrame(string data)
 {
     string frameData;

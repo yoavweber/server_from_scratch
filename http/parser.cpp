@@ -7,11 +7,8 @@
 #include <vector>
 #include <iterator>
 #include <regex>
-// #include <bits/stdc++.h>
-// #include <openssl/sha.h>
 #include <bitset>
 #include "parser.h"
-// #include "base64.cpp"
 
 using namespace std;
 using namespace parser;

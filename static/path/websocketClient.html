@@ -111,7 +111,6 @@ const sendMessage = () => {
 }
 // Listen for messages
 socket.addEventListener('message', function (event) {
-    alert("message recived!!!!!")
     createInput(event.data)
     console.log('Message from server ', event.data);
 });
@@ -139,7 +138,6 @@ const createInput = (input) => {
     span.innerHTML= time
     div.appendChild(span)
     div.appendChild(name)
-    // span.createTextNode(`${new date()}`)
     span.classList.add('time-left')
     name.classList.add('time-right')
 
