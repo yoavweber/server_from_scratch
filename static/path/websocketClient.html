@@ -102,7 +102,7 @@ const sendMessage = () => {
     socket.send(value)
     userText(value)
     console.log(value)
-    if(value == "close") {
+    if(value == "/close") {
 
       socket.close()
       alert("connection closed")
@@ -112,6 +112,11 @@ const sendMessage = () => {
 // Listen for messages
 socket.addEventListener('message', function (event) {
     createInput(event.data)
+    if(event.data == "/close") {
+
+        socket.close()
+        alert("connection closed")
+}
     console.log('Message from server ', event.data);
 });
 
