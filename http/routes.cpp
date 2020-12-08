@@ -35,7 +35,6 @@ void RoutesHandler::routeRequest(string req, Socket socket)
         if (filePath == "webSocket")
         {
             websocket::WebSocket webSocketInstense{req};
-            cout << "-----------------------" << endl;
             if (webSocketInstense.handleHandShake(socket) == -1)
             {
                 //TODO:add this to the log
@@ -63,12 +62,10 @@ void RoutesHandler::sendStaticFile(string filePath, Socket socket)
     {
         string route = routes["index"];
         socket.sendStringViaSocket(handleResponse.successResponse(route));
-        socket.Close();
     }
     else if (routes[filePath] == "")
     {
         socket.sendStringViaSocket(handleResponse.response404());
-        socket.Close();
     }
     else if (filePath == "chat")
     {
@@ -80,8 +77,9 @@ void RoutesHandler::sendStaticFile(string filePath, Socket socket)
         string route = routes[filePath];
         socket.sendStringViaSocket(handleResponse.successResponse(route));
         cout << filePath << " route from else" << endl;
-        socket.Close();
     }
+
+    socket.Close();
 }
 
 // void RoutesHandler::sendSuc

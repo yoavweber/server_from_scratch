@@ -168,6 +168,14 @@ void Socket::Close()
     m_socket = 0;
 }
 
+void Socket::Close(int socket)
+{
+    if (socket != 0)
+        close(socket);
+    cout << "closing connection" << endl;
+    m_socket = 0;
+}
+
 string Socket::bufferToString()
 {
     long valread;

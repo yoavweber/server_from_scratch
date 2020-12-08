@@ -138,8 +138,16 @@ void WebSocket::maintainConnection(Socket socket)
                     dataFrame clientFrame = decodeFrame(clientMessageCrypt);
                     if (clientFrame.opcode == 8)
                     {
+                        for (int i = 0; i < vectorSize; i++)
+                        {
+                            int closeSocket = acceptedSocketVector[i];
+                            if ((FD_ISSET(closeSocket, &read_fds) != 0))
+                            {
+                                socket.Close(closeSocket);
+                            }
+                        }
+                        acceptedSocketVector.resize(0);
                         cout << "closing connection" << endl;
-                        socket.Close();
                         keepLoop = false;
                         break;
                     }
