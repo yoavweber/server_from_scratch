@@ -40,14 +40,13 @@ namespace websocket
 
         std::string encodeFrame(std::string rawData);
 
-        // move it into private
+ 
         bool validWebSocketConnection();
         void maintainConnection(net::Socket socket);
         bool handleWebsocketMessage(std::string req, net::Socket socket);
 
         std::string getHandShake();
 
-        // void sendPong(std::string);
 
         void addSocketToVector(int value)
         {
